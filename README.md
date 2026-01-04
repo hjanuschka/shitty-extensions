@@ -1,4 +1,4 @@
-# pfuschhooks
+# shitty-extensions
 
 Custom hooks for [pi coding agent](https://github.com/badlogic/pi-mono).
 
@@ -81,14 +81,14 @@ cp memory-mode.ts .pi/hooks/
 
 ```json
 {
-  "hooks": ["/path/to/pfuschhooks/memory-mode.ts"]
+  "hooks": ["/path/to/shitty-extensions/memory-mode.ts"]
 }
 ```
 
 ### Option 3: Use --hook flag
 
 ```bash
-pi --hook /path/to/pfuschhooks/memory-mode.ts
+pi --hook /path/to/shitty-extensions/memory-mode.ts
 ```
 
 ## License
