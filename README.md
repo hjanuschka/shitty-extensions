@@ -1,8 +1,18 @@
 # shitty-extensions
 
-Custom hooks for [pi coding agent](https://github.com/badlogic/pi-mono).
+> Custom hooks for [pi coding agent](https://github.com/badlogic/pi-mono).
 
-## Available Hooks
+## Contents
+
+- [Hooks](#hooks)
+  - [memory-mode](#memory-modets) - Save instructions to AGENTS.md files
+  - [usage-bar](#usage-barts) - Show AI provider usage stats (Claude, Copilot, Gemini)
+- [Installation](#installation)
+- [License](#license)
+
+---
+
+## Hooks
 
 ### memory-mode.ts
 
