@@ -27,6 +27,44 @@ Save instructions to AGENTS.md files with AI-assisted integration.
 /mem Prefer async/await over callbacks
 ```
 
+### usage-bar.ts
+
+Shows AI provider usage statistics like [CodexBar](https://github.com/steipete/CodexBar), but as a pi hook.
+
+**Commands:**
+- `/usage` - Show usage statistics for all configured providers
+
+**Supported Providers:**
+- **Claude/Anthropic** - 5h window, weekly limit, model-specific (Sonnet/Opus)
+- **GitHub Copilot** - Premium interactions, chat quota
+- **Google Gemini** - Pro/Flash model quotas
+
+**Credential Sources:**
+- Claude: `~/.pi/agent/auth.json` (pi login) or Claude CLI keychain
+- Copilot: `~/.pi/agent/auth.json` or `gh auth token`
+- Gemini: `~/.gemini/oauth_creds.json`
+
+**Example Output:**
+```
+╭─────────────────────────────────────────────────────╮
+│ AI Usage                                            │
+├─────────────────────────────────────────────────────┤
+│ Claude                                              │
+│   5h      █░░░░░░░░░░░  96% (43m)                  │
+│   Week    ██░░░░░░░░░░  81% (Jan 8)                │
+│   Sonnet  ░░░░░░░░░░░░  99%                        │
+│                                                     │
+│ Copilot                                             │
+│   HTTP 404                                          │
+│                                                     │
+│ Gemini                                              │
+│   HTTP 401                                          │
+│                                                     │
+├─────────────────────────────────────────────────────┤
+│ Press any key to close                              │
+╰─────────────────────────────────────────────────────╯
+```
+
 ## Installation
 
 ### Option 1: Copy to hooks directory
