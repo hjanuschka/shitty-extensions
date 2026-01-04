@@ -2,28 +2,54 @@
 
 Custom hooks for [pi coding agent](https://github.com/badlogic/pi-mono).
 
+## Table of Contents
+
+- [Available Hooks](#available-hooks)
+  - [memory-mode.ts](#memory-modets)
+  - [plan-mode.ts](#plan-modets)
+- [Installation](#installation)
+  - [Option 1: Copy to hooks directory](#option-1-copy-to-hooks-directory)
+  - [Option 2: Add to settings.json](#option-2-add-to-settingsjson)
+  - [Option 3: Use --hook flag](#option-3-use---hook-flag)
+- [License](#license)
+
+---
+
 ## Available Hooks
 
 ### memory-mode.ts
 
 Save instructions to AGENTS.md files with AI-assisted integration.
 
-**Commands:**
-- `/mem <instruction>` - Save an instruction
-- `/remember <instruction>` - Alias for `/mem`
+#### Commands
 
-**Features:**
-- Choose save location: Project Local, Project, or Global
-- AI integrates instruction into existing file structure intelligently
-- Groups related instructions under appropriate headings
-- Avoids duplicating rules (updates existing ones instead)
-- Preview changes before saving
-- AGENTS.local.md auto-added to .gitignore
+| Command | Description |
+|---------|-------------|
+| `/mem <instruction>` | Save an instruction to AGENTS.md |
+| `/remember <instruction>` | Alias for `/mem` |
 
-**Example:**
+#### Features
+
+- **Location selector**: Choose where to save:
+  | Location | File | Use Case |
+  |----------|------|----------|
+  | Project Local | `./AGENTS.local.md` | Personal preferences, auto-added to `.gitignore` |
+  | Project | `./AGENTS.md` | Shared with team |
+  | Global | `~/.pi/agent/AGENTS.md` | All your projects |
+
+- **AI-assisted integration**: The current model intelligently integrates instructions:
+  - Groups related instructions under appropriate headings
+  - Avoids duplicating rules (updates existing ones instead)
+  - Maintains consistent formatting with existing content
+
+- **Preview before save**: Review proposed changes before committing
+
+#### Example
+
 ```
 /mem Never use git commands directly
 /mem Always use TypeScript strict mode
+/mem Prefer async/await over callbacks
 ```
 
 ---
@@ -32,29 +58,50 @@ Save instructions to AGENTS.md files with AI-assisted integration.
 
 Claude Code-style "plan mode" for safe code exploration.
 
-**Commands:**
-- `/plan` - Toggle plan mode on/off
-- `/todos` - Show current plan todo list
+#### Commands
 
-**Shortcut:**
-- `Shift+P` - Toggle plan mode
+| Command | Description |
+|---------|-------------|
+| `/plan` | Toggle plan mode on/off |
+| `/todos` | Show current plan todo list |
 
-**Features:**
-- In plan mode: only read-only tools (read, bash read-only, grep, find, ls)
-- Agent cannot modify files while planning
-- Injects system context telling the agent about restrictions
-- After each response, prompts to execute the plan or continue planning
-- Shows "plan" indicator in footer when active
-- Extracts todo list from plan and tracks progress during execution
-- Uses ID-based tracking: agent outputs `[DONE:id]` to mark steps complete
+#### Keyboard Shortcuts
 
-**Example:**
+| Shortcut | Action |
+|----------|--------|
+| `Shift+P` | Toggle plan mode |
+
+#### Features
+
+- **Read-only mode**: In plan mode, only these tools are available:
+  - `read` - Read file contents
+  - `bash` (read-only commands only)
+  - `grep` - Search file contents
+  - `find` - Find files
+  - `ls` - List directories
+
+- **Destructive command blocking**: Blocks commands like `rm`, `mv`, `git commit`, `npm install`, etc.
+
+- **Plan execution flow**:
+  1. Enable plan mode with `/plan`
+  2. Agent explores code in read-only mode
+  3. Agent creates a plan with numbered steps
+  4. After each response, prompts: "Execute plan?" or "Continue planning?"
+  5. When executing, tracks progress with `[DONE:id]` markers
+
+- **Todo tracking**: View progress with `/todos`
+
+- **Visual indicator**: Shows "plan" in footer when active
+
+#### Example
+
 ```
 /plan
 > Analyze the codebase and create a plan to refactor the authentication module
 
-# Agent explores code in read-only mode, creates a plan
-# Then prompts: "Execute plan?" or "Continue planning?"
+# Agent explores in read-only mode, creates numbered plan
+# Prompts to execute or continue planning
+# During execution, marks steps [DONE:1], [DONE:2], etc.
 ```
 
 ---
@@ -76,6 +123,8 @@ cp plan-mode.ts .pi/hooks/
 
 ### Option 2: Add to settings.json
 
+Add to `~/.pi/agent/settings.json`:
+
 ```json
 {
   "hooks": [
@@ -88,9 +137,15 @@ cp plan-mode.ts .pi/hooks/
 ### Option 3: Use --hook flag
 
 ```bash
+# Single hook
 pi --hook /path/to/shitty-extensions/memory-mode.ts
-pi --hook /path/to/shitty-extensions/plan-mode.ts
+
+# Multiple hooks
+pi --hook /path/to/shitty-extensions/memory-mode.ts \
+   --hook /path/to/shitty-extensions/plan-mode.ts
 ```
+
+---
 
 ## License
 
