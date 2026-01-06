@@ -1,9 +1,14 @@
 /**
- * Usage Bar Hook - Shows AI provider usage stats like CodexBar
- * Run /usage to see usage for Claude, Copilot, Gemini
+ * Usage Bar Extension - Shows AI provider usage stats like CodexBar
+ * Run /usage to see usage for Claude, Copilot, Gemini, and Codex
+ * 
+ * Features:
+ * - Usage stats with progress bars
+ * - Provider status (outages/incidents)
+ * - Reset countdowns
  */
 
-import type { HookAPI } from "@mariozechner/pi-coding-agent/hooks";
+import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { visibleWidth } from "@mariozechner/pi-tui";
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -18,6 +23,12 @@ interface RateWindow {
 	label: string;
 	usedPercent: number;
 	resetDescription?: string;
+	resetsAt?: Date;
+}
+
+interface ProviderStatus {
+	indicator: "none" | "minor" | "major" | "critical" | "maintenance" | "unknown";
+	description?: string;
 }
 
 interface UsageSnapshot {
@@ -26,6 +37,86 @@ interface UsageSnapshot {
 	windows: RateWindow[];
 	plan?: string;
 	error?: string;
+	status?: ProviderStatus;
+}
+
+// ============================================================================
+// Status Polling
+// ============================================================================
+
+const STATUS_URLS: Record<string, string> = {
+	anthropic: "https://status.anthropic.com/api/v2/status.json",
+	codex: "https://status.openai.com/api/v2/status.json",
+	copilot: "https://www.githubstatus.com/api/v2/status.json",
+};
+
+async function fetchProviderStatus(provider: string): Promise<ProviderStatus> {
+	const url = STATUS_URLS[provider];
+	if (!url) return { indicator: "none" };
+	
+	try {
+		const controller = new AbortController();
+		setTimeout(() => controller.abort(), 5000);
+		
+		const res = await fetch(url, { signal: controller.signal });
+		if (!res.ok) return { indicator: "unknown" };
+		
+		const data = await res.json() as any;
+		const indicator = data.status?.indicator || "none";
+		const description = data.status?.description;
+		
+		return {
+			indicator: indicator as ProviderStatus["indicator"],
+			description,
+		};
+	} catch {
+		return { indicator: "unknown" };
+	}
+}
+
+async function fetchGeminiStatus(): Promise<ProviderStatus> {
+	try {
+		const controller = new AbortController();
+		setTimeout(() => controller.abort(), 5000);
+		
+		const res = await fetch("https://www.google.com/appsstatus/dashboard/incidents.json", {
+			signal: controller.signal,
+		});
+		if (!res.ok) return { indicator: "unknown" };
+		
+		const incidents = await res.json() as any[];
+		
+		// Look for active Gemini incidents (product ID: npdyhgECDJ6tB66MxXyo)
+		const geminiProductId = "npdyhgECDJ6tB66MxXyo";
+		const activeIncidents = incidents.filter((inc: any) => {
+			if (inc.end) return false; // Not active
+			const affected = inc.currently_affected_products || inc.affected_products || [];
+			return affected.some((p: any) => p.id === geminiProductId);
+		});
+		
+		if (activeIncidents.length === 0) {
+			return { indicator: "none" };
+		}
+		
+		// Find most severe
+		let worstIndicator: ProviderStatus["indicator"] = "minor";
+		let description: string | undefined;
+		
+		for (const inc of activeIncidents) {
+			const status = inc.most_recent_update?.status || inc.status_impact;
+			if (status === "SERVICE_OUTAGE") {
+				worstIndicator = "critical";
+				description = inc.external_desc;
+			} else if (status === "SERVICE_DISRUPTION" && worstIndicator !== "critical") {
+				worstIndicator = "major";
+				description = inc.external_desc;
+			}
+		}
+		
+		return { indicator: worstIndicator, description };
+	} catch {
+		return { indicator: "unknown" };
+	}
 }
 
 // ============================================================================
@@ -191,19 +282,29 @@ async function fetchCopilotUsage(): Promise<UsageSnapshot> {
 // Gemini Usage
 // ============================================================================
 
-function loadGeminiToken(): string | undefined {
-	const credPath = path.join(os.homedir(), ".gemini", "oauth_creds.json");
+async function fetchGeminiUsage(_modelRegistry: any): Promise<UsageSnapshot> {
+	let token: string | undefined;
+	
+	// Read directly from pi's auth.json
+	const piAuthPath = path.join(os.homedir(), ".pi", "agent", "auth.json");
 	try {
-		if (fs.existsSync(credPath)) {
-			const data = JSON.parse(fs.readFileSync(credPath, "utf-8"));
-			return data.access_token;
+		if (fs.existsSync(piAuthPath)) {
+			const data = JSON.parse(fs.readFileSync(piAuthPath, "utf-8"));
+			token = data["google-gemini-cli"]?.access;
 		}
 	} catch {}
-	return undefined;
-}
-
-async function fetchGeminiUsage(): Promise<UsageSnapshot> {
-	const token = loadGeminiToken();
+	
+	// Fallback to ~/.gemini/oauth_creds.json
+	if (!token) {
+		const credPath = path.join(os.homedir(), ".gemini", "oauth_creds.json");
+		try {
+			if (fs.existsSync(credPath)) {
+				const data = JSON.parse(fs.readFileSync(credPath, "utf-8"));
+				token = data.access_token;
+			}
+		} catch {}
+	}
+	
 	if (!token) {
 		return { provider: "gemini", displayName: "Gemini", windows: [], error: "No credentials" };
 	}
@@ -234,14 +335,22 @@ async function fetchGeminiUsage(): Promise<UsageSnapshot> {
 
 		const windows: RateWindow[] = [];
 		let proMin = 1, flashMin = 1;
+		let hasProModel = false, hasFlashModel = false;
 
 		for (const [model, frac] of Object.entries(quotas)) {
-			if (model.toLowerCase().includes("pro") && frac < proMin) proMin = frac;
-			if (model.toLowerCase().includes("flash") && frac < flashMin) flashMin = frac;
+			if (model.toLowerCase().includes("pro")) {
+				hasProModel = true;
+				if (frac < proMin) proMin = frac;
+			}
+			if (model.toLowerCase().includes("flash")) {
+				hasFlashModel = true;
+				if (frac < flashMin) flashMin = frac;
+			}
 		}
 
-		if (proMin < 1) windows.push({ label: "Pro", usedPercent: (1 - proMin) * 100 });
-		if (flashMin < 1) windows.push({ label: "Flash", usedPercent: (1 - flashMin) * 100 });
+		// Always show windows if model exists (even at 0% usage)
+		if (hasProModel) windows.push({ label: "Pro", usedPercent: (1 - proMin) * 100 });
+		if (hasFlashModel) windows.push({ label: "Flash", usedPercent: (1 - flashMin) * 100 });
 
 		return { provider: "gemini", displayName: "Gemini", windows };
 	} catch (e) {
@@ -250,16 +359,150 @@ async function fetchGeminiUsage(): Promise<UsageSnapshot> {
 }
 
 // ============================================================================
+// Codex (OpenAI) Usage
+// ============================================================================
+
+async function fetchCodexUsage(modelRegistry: any): Promise<UsageSnapshot> {
+	// Try to get token from pi's auth storage first
+	let accessToken: string | undefined;
+	let accountId: string | undefined;
+	
+	try {
+		// Try openai-codex provider first (pi's built-in)
+		accessToken = await modelRegistry?.authStorage?.getApiKey?.("openai-codex");
+		
+		// Get account ID if available from OAuth credentials
+		const cred = modelRegistry?.authStorage?.get?.("openai-codex");
+		if (cred?.type === "oauth") {
+			accountId = (cred as any).accountId;
+		}
+	} catch {}
+	
+	// Fallback to ~/.codex/auth.json if not in pi's auth
+	if (!accessToken) {
+		const codexHome = process.env.CODEX_HOME || path.join(os.homedir(), ".codex");
+		const authPath = path.join(codexHome, "auth.json");
+		
+		try {
+			if (fs.existsSync(authPath)) {
+				const data = JSON.parse(fs.readFileSync(authPath, "utf-8"));
+				
+				if (data.OPENAI_API_KEY) {
+					accessToken = data.OPENAI_API_KEY;
+				} else if (data.tokens?.access_token) {
+					accessToken = data.tokens.access_token;
+					accountId = data.tokens.account_id;
+				}
+			}
+		} catch {}
+	}
+	
+	if (!accessToken) {
+		return { provider: "codex", displayName: "Codex", windows: [], error: "No credentials" };
+	}
+
+	try {
+		const controller = new AbortController();
+		setTimeout(() => controller.abort(), 5000);
+
+		const headers: Record<string, string> = {
+			Authorization: `Bearer ${accessToken}`,
+			"User-Agent": "CodexBar",
+			Accept: "application/json",
+		};
+		
+		if (accountId) {
+			headers["ChatGPT-Account-Id"] = accountId;
+		}
+
+		const res = await fetch("https://chatgpt.com/backend-api/wham/usage", {
+			method: "GET",
+			headers,
+			signal: controller.signal,
+		});
+
+		if (res.status === 401 || res.status === 403) {
+			return { provider: "codex", displayName: "Codex", windows: [], error: "Token expired" };
+		}
+
+		if (!res.ok) {
+			return { provider: "codex", displayName: "Codex", windows: [], error: `HTTP ${res.status}` };
+		}
+
+		const data = await res.json() as any;
+		const windows: RateWindow[] = [];
+
+		// Primary window (usually 3-hour)
+		if (data.rate_limit?.primary_window) {
+			const pw = data.rate_limit.primary_window;
+			const resetDate = pw.reset_at ? new Date(pw.reset_at * 1000) : undefined;
+			const windowHours = Math.round((pw.limit_window_seconds || 10800) / 3600);
+			windows.push({
+				label: `${windowHours}h`,
+				usedPercent: pw.used_percent || 0,
+				resetDescription: resetDate ? formatReset(resetDate) : undefined,
+			});
+		}
+
+		// Secondary window (usually daily)
+		if (data.rate_limit?.secondary_window) {
+			const sw = data.rate_limit.secondary_window;
+			const resetDate = sw.reset_at ? new Date(sw.reset_at * 1000) : undefined;
+			const windowHours = Math.round((sw.limit_window_seconds || 86400) / 3600);
+			const label = windowHours >= 24 ? "Day" : `${windowHours}h`;
+			windows.push({
+				label,
+				usedPercent: sw.used_percent || 0,
+				resetDescription: resetDate ? formatReset(resetDate) : undefined,
+			});
+		}
+
+		// Credits info
+		let plan = data.plan_type;
+		if (data.credits?.balance !== undefined && data.credits.balance !== null) {
+			const balance = typeof data.credits.balance === 'number' 
+				? data.credits.balance 
+				: parseFloat(data.credits.balance) || 0;
+			plan = plan ? `${plan} ($${balance.toFixed(2)})` : `$${balance.toFixed(2)}`;
+		}
+
+		return { provider: "codex", displayName: "Codex", windows, plan };
+	} catch (e) {
+		return { provider: "codex", displayName: "Codex", windows: [], error: String(e) };
+	}
+}
+
+// ============================================================================
 // Helpers
 // ============================================================================
 
 function formatReset(date: Date): string {
-	const diffMins = Math.floor((date.getTime() - Date.now()) / 60000);
-	if (diffMins < 0) return "now";
+	const diffMs = date.getTime() - Date.now();
+	if (diffMs < 0) return "now";
+	
+	const diffMins = Math.floor(diffMs / 60000);
 	if (diffMins < 60) return `${diffMins}m`;
+	
 	const hours = Math.floor(diffMins / 60);
-	if (hours < 24) return `${hours}h`;
+	const mins = diffMins % 60;
+	if (hours < 24) return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+	
+	const days = Math.floor(hours / 24);
+	if (days < 7) return `${days}d ${hours % 24}h`;
+	
 	return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(date);
+}
+
+function getStatusEmoji(status?: ProviderStatus): string {
+	if (!status) return "";
+	switch (status.indicator) {
+		case "none": return "✅";
+		case "minor": return "⚠️";
+		case "major": return "🟠";
+		case "critical": return "🔴";
+		case "maintenance": return "🔧";
+		default: return "";
+	}
 }
 
 // ============================================================================
@@ -272,11 +515,13 @@ class UsageComponent {
 	private tui: { requestRender: () => void };
 	private theme: any;
 	private onClose: () => void;
+	private modelRegistry: any;
 
-	constructor(tui: { requestRender: () => void }, theme: any, onClose: () => void) {
+	constructor(tui: { requestRender: () => void }, theme: any, onClose: () => void, modelRegistry: any) {
 		this.tui = tui;
 		this.theme = theme;
 		this.onClose = onClose;
+		this.modelRegistry = modelRegistry;
 		this.load();
 	}
 
@@ -284,13 +529,25 @@ class UsageComponent {
 		const timeout = <T>(p: Promise<T>, ms: number, fallback: T) =>
 			Promise.race([p, new Promise<T>((r) => setTimeout(() => r(fallback), ms))]);
 
-		const [claude, copilot, gemini] = await Promise.all([
+		// Fetch usage and status in parallel
+		const [claude, copilot, gemini, codex, claudeStatus, copilotStatus, geminiStatus, codexStatus] = await Promise.all([
 			timeout(fetchClaudeUsage(), 6000, { provider: "anthropic", displayName: "Claude", windows: [], error: "Timeout" }),
 			timeout(fetchCopilotUsage(), 6000, { provider: "copilot", displayName: "Copilot", windows: [], error: "Timeout" }),
-			timeout(fetchGeminiUsage(), 6000, { provider: "gemini", displayName: "Gemini", windows: [], error: "Timeout" }),
+			timeout(fetchGeminiUsage(this.modelRegistry), 6000, { provider: "gemini", displayName: "Gemini", windows: [], error: "Timeout" }),
+			timeout(fetchCodexUsage(this.modelRegistry), 6000, { provider: "codex", displayName: "Codex", windows: [], error: "Timeout" }),
+			timeout(fetchProviderStatus("anthropic"), 3000, { indicator: "unknown" as const }),
+			timeout(fetchProviderStatus("copilot"), 3000, { indicator: "unknown" as const }),
+			timeout(fetchGeminiStatus(), 3000, { indicator: "unknown" as const }),
+			timeout(fetchProviderStatus("codex"), 3000, { indicator: "unknown" as const }),
 		]);
 
-		this.usages = [claude, copilot, gemini];
+		// Attach status to usage
+		claude.status = claudeStatus;
+		copilot.status = copilotStatus;
+		gemini.status = geminiStatus;
+		codex.status = codexStatus;
+
+		this.usages = [claude, copilot, gemini, codex];
 		this.loading = false;
 		this.tui.requestRender();
 	}
@@ -327,8 +584,19 @@ class UsageComponent {
 			lines.push(box("Loading..."));
 		} else {
 			for (const u of this.usages) {
+				// Provider header with status emoji and plan
+				const statusEmoji = getStatusEmoji(u.status);
 				const planStr = u.plan ? dim(` (${u.plan})`) : "";
-				lines.push(box(bold(u.displayName) + planStr));
+				const statusStr = statusEmoji ? ` ${statusEmoji}` : "";
+				lines.push(box(bold(u.displayName) + planStr + statusStr));
+
+				// Show incident description if any
+				if (u.status?.indicator && u.status.indicator !== "none" && u.status.indicator !== "unknown" && u.status.description) {
+					const desc = u.status.description.length > 40 
+						? u.status.description.substring(0, 37) + "..." 
+						: u.status.description;
+					lines.push(box(t.fg("warning", `  ⚡ ${desc}`)));
+				}
 
 				if (u.error) {
 					lines.push(box(dim(`  ${u.error}`)));
@@ -342,7 +610,7 @@ class UsageComponent {
 						const empty = barW - filled;
 						const color = remaining <= 10 ? "error" : remaining <= 30 ? "warning" : "success";
 						const bar = t.fg(color, "█".repeat(filled)) + dim("░".repeat(empty));
-						const reset = w.resetDescription ? dim(` (${w.resetDescription})`) : "";
+						const reset = w.resetDescription ? dim(` ⏱${w.resetDescription}`) : "";
 						lines.push(box(`  ${w.label.padEnd(7)} ${bar} ${remaining.toFixed(0).padStart(3)}%${reset}`));
 					}
 				}
@@ -364,7 +632,7 @@ class UsageComponent {
 // Hook
 // ============================================================================
 
-export default function (pi: HookAPI) {
+export default function (pi: ExtensionAPI) {
 	pi.registerCommand("usage", {
 		description: "Show AI provider usage statistics",
 		handler: async (_args, ctx) => {
@@ -373,8 +641,9 @@ export default function (pi: HookAPI) {
 				return;
 			}
 
+			const modelRegistry = ctx.modelRegistry;
 			await ctx.ui.custom((tui, theme, done) => {
-				return new UsageComponent(tui, theme, () => done(undefined));
+				return new UsageComponent(tui, theme, () => done(undefined), modelRegistry);
 			});
 		},
 	});
