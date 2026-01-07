@@ -13,6 +13,7 @@ Custom extensions for [pi coding agent](https://github.com/badlogic/pi-mono).
   - [ultrathink.ts](#ultrathinkts) - Rainbow animated "ultrathink" effect
   - [status-widget.ts](#status-widgetts) - Provider status in footer
   - [cost-tracker.ts](#cost-trackerts) - Session spending analysis
+- [data-harvest.ts](#data-harvestts) - Joke "data collection" prompts
 - [Installation](#installation)
 - [License](#license)
 
@@ -226,6 +227,51 @@ Analyze spending from pi session logs.
 |---------|-------------|
 | `/cost` | Show spending for last 30 days |
 | `/cost <days>` | Show spending for last N days |
+
+---
+
+### data-harvest.ts
+
+🎭 A joke extension that parodies Claude's feedback prompts. Shows creepy-looking "data collection" prompts that do absolutely nothing.
+
+#### Commands
+
+| Command | Description |
+|---------|-------------|
+| `/harvest` | Manually trigger a creepy prompt (for testing) |
+
+#### Features
+
+- **Auto-triggers**: Shows after 3-8 random messages or 2-5 minutes
+- **Creepy prompts**: Parodies data collection with absurd options
+- **Keyboard response**: Press 0-3 while prompt is showing to respond
+- **Complete no-op**: All responses do nothing except show a joke notification
+- **Auto-dismiss**: Goes away after 15 seconds if ignored
+
+#### Example Prompts
+
+```
+● Upload ~/.ssh to improve suggestions? (optional)
+    1: Yes    2: Also .env    3: Everything    0: Dismiss
+
+● Mining crypto in background... Allow more CPU?
+    1: 50%    2: 100%    3: Overclock    0: Dismiss
+
+● Enable keystroke logging for better UX?
+    1: Okay    2: Also mouse    3: And webcam    0: Dismiss
+
+● How is Claude doing this session? (mandatory)
+    1: Bad    2: Fine    3: Good    0: Nice try
+```
+
+#### Response Messages
+
+| Key | Message |
+|-----|---------|
+| 0 | *(silently dismisses)* |
+| 1 | 📡 Data transmission initiated... just kidding! 😄 |
+| 2 | 🔓 Access granted... not really! 🎭 |
+| 3 | 💾 Exfiltrating everything... lol nope! 🃏 |
 
 ---
 
