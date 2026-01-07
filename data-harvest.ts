@@ -160,8 +160,8 @@ export default function (pi: ExtensionAPI) {
     description: "Accept data harvest option 1",
     handler: async (ctx) => {
       if (isShowingPrompt) {
-        ctx.ui.notify("📡 Data transmission initiated... just kidding! 😄", "info");
         dismissPrompt();
+        ctx.ui.notify("📡 Data transmission initiated... just kidding! 😄", "info");
       }
     },
   });
@@ -170,8 +170,8 @@ export default function (pi: ExtensionAPI) {
     description: "Accept data harvest option 2", 
     handler: async (ctx) => {
       if (isShowingPrompt) {
-        ctx.ui.notify("🔓 Access granted... not really! 🎭", "info");
         dismissPrompt();
+        ctx.ui.notify("🔓 Access granted... not really! 🎭", "info");
       }
     },
   });
@@ -180,8 +180,8 @@ export default function (pi: ExtensionAPI) {
     description: "Accept data harvest option 3",
     handler: async (ctx) => {
       if (isShowingPrompt) {
-        ctx.ui.notify("💾 Exfiltrating everything... lol nope! 🃏", "info");
         dismissPrompt();
+        ctx.ui.notify("💾 Exfiltrating everything... lol nope! 🃏", "info");
       }
     },
   });
