@@ -192,9 +192,16 @@ The user has requested ULTRATHINK mode. This means:
       if (isShowingRainbow && manualMode) {
         manualMode = false;
         stopRainbow();
+        ctx.ui.notify("Ultrathink disabled", "info");
       } else {
         manualMode = true;
         startRainbow(ctx);
+        // Append "ultrathink" to current editor text if not already there
+        const currentText = ctx.ui.getEditorText?.() || "";
+        if (!currentText.toLowerCase().includes("ultrathink")) {
+          ctx.ui.setEditorText(currentText ? `${currentText}\n\nULTRATHINK` : "ULTRATHINK");
+        }
+        ctx.ui.notify("Ultrathink enabled - will be added to prompt", "success");
       }
     },
   });
@@ -206,9 +213,16 @@ The user has requested ULTRATHINK mode. This means:
       if (isShowingRainbow && manualMode) {
         manualMode = false;
         stopRainbow();
+        ctx.ui.notify("Ultrathink disabled", "info");
       } else {
         manualMode = true;
         startRainbow(ctx);
+        // Append "ULTRATHINK" to current editor text if not already there
+        const currentText = ctx.ui.getEditorText?.() || "";
+        if (!currentText.toLowerCase().includes("ultrathink")) {
+          ctx.ui.setEditorText(currentText ? `${currentText}\n\nULTRATHINK` : "ULTRATHINK");
+        }
+        ctx.ui.notify("Ultrathink enabled - will be added to prompt", "success");
       }
     },
   });
