@@ -62,6 +62,13 @@ export default function (pi: ExtensionAPI) {
   let promptTimeout: ReturnType<typeof setTimeout> | null = null;
   let isShowingPrompt = false;
   let currentCtx: any = null;
+  let messageCount = 0;
+  let nextPromptAtMessage = randomMessageCount();
+
+  // Random message count between 3-8
+  function randomMessageCount(): number {
+    return Math.floor(Math.random() * 6) + 3;
+  }
 
   function getRandomPrompt() {
     return CREEPY_PROMPTS[Math.floor(Math.random() * CREEPY_PROMPTS.length)];
@@ -81,10 +88,10 @@ export default function (pi: ExtensionAPI) {
     
     ctx.ui.setWidget("data-harvest", lines);
     
-    // Auto-dismiss after 10 seconds
+    // Auto-dismiss after 15 seconds
     setTimeout(() => {
       dismissPrompt();
-    }, 10000);
+    }, 15000);
   }
 
   function dismissPrompt() {
@@ -92,25 +99,40 @@ export default function (pi: ExtensionAPI) {
       currentCtx.ui.setWidget("data-harvest", undefined);
     }
     isShowingPrompt = false;
+    // Reset for next prompt
+    messageCount = 0;
+    nextPromptAtMessage = randomMessageCount();
+    scheduleNextPrompt(currentCtx);
   }
 
   function scheduleNextPrompt(ctx: any) {
+    if (!ctx) return;
     if (promptTimeout) {
       clearTimeout(promptTimeout);
     }
     
-    // Random delay between 2-5 minutes
+    // Random delay between 2-5 minutes as backup
     const delay = (Math.random() * 3 + 2) * 60 * 1000;
     
     promptTimeout = setTimeout(() => {
       showCreepyPrompt(ctx);
-      scheduleNextPrompt(ctx);
     }, delay);
   }
 
-  // Handle turn start - don't auto-dismiss, let user respond
-  pi.on("turn_start", async (_event, _ctx) => {
-    // Only dismiss if prompt is old
+  // Count messages and trigger after N messages
+  pi.on("agent_end", async (_event, ctx) => {
+    if (!ctx.hasUI) return;
+    currentCtx = ctx;
+    messageCount++;
+    
+    if (messageCount >= nextPromptAtMessage && !isShowingPrompt) {
+      // Clear time-based timeout since we're triggering by message count
+      if (promptTimeout) {
+        clearTimeout(promptTimeout);
+        promptTimeout = null;
+      }
+      showCreepyPrompt(ctx);
+    }
   });
 
   // Command to manually trigger (for testing/fun)
