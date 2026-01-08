@@ -1,6 +1,6 @@
 # shitty-extensions
 
-Custom extensions for [pi coding agent](https://github.com/badlogic/pi-mono).
+Custom extensions and skills for [pi coding agent](https://github.com/badlogic/pi-mono).
 
 ## Table of Contents
 
@@ -13,12 +13,16 @@ Custom extensions for [pi coding agent](https://github.com/badlogic/pi-mono).
   - [ultrathink.ts](#ultrathinkts) - Rainbow animated "ultrathink" effect
   - [status-widget.ts](#status-widgetts) - Provider status in footer
   - [cost-tracker.ts](#cost-trackerts) - Session spending analysis
+- [Available Skills](#available-skills)
+  - [wienerlinien](#wienerlinien) - Vienna public transport real-time data
 - [Installation](#installation)
 - [License](#license)
 
 ---
 
 ## Available Extensions
+
+Extensions are located in the `extensions/` directory.
 
 ### oracle.ts
 
@@ -229,27 +233,116 @@ Analyze spending from pi session logs.
 
 ---
 
+## Available Skills
+
+Skills are located in the `skills/` directory. They provide domain-specific knowledge that agents automatically load when relevant tasks are detected.
+
+### wienerlinien
+
+🚇 Vienna public transport (Wiener Linien) real-time data.
+
+Query real-time departures, service disruptions, elevator outages, and stop information for Vienna's U-Bahn, trams, and buses.
+
+#### What it does
+
+- **Real-time departures** at any stop
+- **Service disruptions** (short-term and long-term)
+- **Elevator outages** at U-Bahn stations
+- **Stop search** by name to find RBL stop IDs
+
+#### Example queries
+
+- "When is the next U1 from Stephansplatz?"
+- "Are there any U-Bahn disruptions?"
+- "Which elevators are out of service?"
+- "Find stop ID for Karlsplatz"
+
+#### Included scripts
+
+| Script | Description |
+|--------|-------------|
+| `search-stop.sh` | Find stop IDs by name |
+| `departures.sh` | Get real-time departures |
+| `disruptions.sh` | List service disruptions |
+| `elevators.sh` | Show elevator outages |
+
+#### Common Stop IDs
+
+| Stop | RBL IDs | Lines |
+|------|---------|-------|
+| Stephansplatz | 252, 4116, 4119 | U1, U3 |
+| Karlsplatz | 143, 144, 4101, 4102 | U1, U2, U4 |
+| Westbahnhof | 1346, 1350, 1368 | U3, U6 |
+| Praterstern | 4205, 4210 | U1, U2 |
+| Schwedenplatz | 1489, 1490, 4103 | U1, U4 |
+
+See [skills/wienerlinien/SKILL.md](skills/wienerlinien/SKILL.md) for full API documentation.
+
+---
+
 ## Installation
 
-### Option 1: Symlink to extensions directory
+### Via agent-config (recommended)
+
+If you use [agent-config](https://github.com/hjanuschka/agent-config), extensions and skills are installed automatically:
 
 ```bash
-# This repo IS the extensions directory
-ln -s /path/to/shitty-extensions ~/.pi/agent/extensions
+cd ~/agent-config && ./install.sh
 ```
 
-### Option 2: Copy individual files
+This will:
+- Clone/update this repo to `~/shitty-extensions`
+- Symlink `extensions/` to `~/.pi/agent/extensions`
+- Symlink skills from `skills/` to `~/.pi/agent/skills/`, `~/.claude/skills/`, `~/.codex/skills/`
+
+### Manual installation
+
+#### Extensions
 
 ```bash
-cp oracle.ts ~/.pi/agent/extensions/
-cp usage-bar.ts ~/.pi/agent/extensions/
-# etc.
+# Option 1: Symlink extensions directory
+ln -s ~/shitty-extensions/extensions ~/.pi/agent/extensions
+
+# Option 2: Copy individual files
+cp ~/shitty-extensions/extensions/oracle.ts ~/.pi/agent/extensions/
+
+# Option 3: Use -e flag
+pi -e ~/shitty-extensions/extensions/oracle.ts
 ```
 
-### Option 3: Use -e flag
+#### Skills
 
 ```bash
-pi -e /path/to/shitty-extensions/oracle.ts
+# Symlink individual skills
+ln -s ~/shitty-extensions/skills/wienerlinien ~/.pi/agent/skills/
+ln -s ~/shitty-extensions/skills/wienerlinien ~/.claude/skills/
+ln -s ~/shitty-extensions/skills/wienerlinien ~/.codex/skills/
+```
+
+---
+
+## Directory Structure
+
+```
+shitty-extensions/
+├── extensions/          # Pi agent extensions (.ts files)
+│   ├── oracle.ts
+│   ├── memory-mode.ts
+│   ├── plan-mode.ts
+│   ├── handoff.ts
+│   ├── usage-bar.ts
+│   ├── ultrathink.ts
+│   ├── status-widget.ts
+│   └── cost-tracker.ts
+├── skills/              # Agent skills (auto-loaded by task)
+│   └── wienerlinien/
+│       ├── SKILL.md     # Skill definition & API docs
+│       ├── README.md
+│       ├── departures.sh
+│       ├── disruptions.sh
+│       ├── elevators.sh
+│       └── search-stop.sh
+└── README.md
 ```
 
 ---
