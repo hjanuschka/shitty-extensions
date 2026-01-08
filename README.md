@@ -15,6 +15,7 @@ Custom extensions and skills for [pi coding agent](https://github.com/badlogic/p
   - [cost-tracker.ts](#cost-trackerts) - Session spending analysis
 - [Available Skills](#available-skills)
   - [wienerlinien](#wienerlinien) - Vienna public transport real-time data
+  - [oebb-scotty](#oebb-scotty) - Austrian rail travel planner (ÖBB)
 - [Installation](#installation)
 - [License](#license)
 
@@ -280,6 +281,51 @@ See [skills/wienerlinien/SKILL.md](skills/wienerlinien/SKILL.md) for full API do
 
 ---
 
+### oebb-scotty
+
+🚂 Austrian rail travel planner (ÖBB Scotty).
+
+Plan train journeys in Austria, check departures/arrivals at stations, and get service disruptions for ÖBB trains, S-Bahn, regional trains, and connections to neighboring countries.
+
+#### What it does
+
+- **Trip planning** between any two stations
+- **Station departures/arrivals** with real-time updates
+- **Service disruptions** and alerts
+- **Station search** by name
+
+#### Example queries
+
+- "How do I get from Vienna to Salzburg?"
+- "When is the next train from Wien Hbf to Graz?"
+- "Show arrivals at Linz Hbf"
+- "Are there any train disruptions today?"
+
+#### Included scripts
+
+| Script | Description |
+|--------|-------------|
+| `search-station.sh` | Find stations by name |
+| `departures.sh` | Get station departures |
+| `arrivals.sh` | Get station arrivals |
+| `trip.sh` | Plan a journey |
+| `disruptions.sh` | List service alerts |
+
+#### Common Station IDs
+
+| Station | extId |
+|---------|-------|
+| Wien Hbf | 1190100 |
+| Wien Meidling | 1190528 |
+| Salzburg Hbf | 8100002 |
+| Graz Hbf | 8100173 |
+| Linz Hbf | 8100013 |
+| Innsbruck Hbf | 8100108 |
+
+See [skills/oebb-scotty/SKILL.md](skills/oebb-scotty/SKILL.md) for full API documentation.
+
+---
+
 ## Installation
 
 ### Via agent-config (recommended)
@@ -335,13 +381,21 @@ shitty-extensions/
 │   ├── status-widget.ts
 │   └── cost-tracker.ts
 ├── skills/              # Agent skills (auto-loaded by task)
-│   └── wienerlinien/
+│   ├── wienerlinien/
+│   │   ├── SKILL.md     # Skill definition & API docs
+│   │   ├── README.md
+│   │   ├── departures.sh
+│   │   ├── disruptions.sh
+│   │   ├── elevators.sh
+│   │   └── search-stop.sh
+│   └── oebb-scotty/
 │       ├── SKILL.md     # Skill definition & API docs
 │       ├── README.md
+│       ├── arrivals.sh
 │       ├── departures.sh
 │       ├── disruptions.sh
-│       ├── elevators.sh
-│       └── search-stop.sh
+│       ├── search-station.sh
+│       └── trip.sh
 └── README.md
 ```
 
