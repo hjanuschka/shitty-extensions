@@ -275,17 +275,30 @@ async function fetchCopilotUsage(_modelRegistry: any): Promise<UsageSnapshot> {
 		const data = await res.json() as any;
 		const windows: RateWindow[] = [];
 
+		// Parse reset date for display
+		const resetDate = data.quota_reset_date_utc ? new Date(data.quota_reset_date_utc) : undefined;
+		const resetDesc = resetDate ? formatReset(resetDate) : undefined;
+
+		// Premium interactions (e.g., Claude, o1 models) - has a cap
 		if (data.quota_snapshots?.premium_interactions) {
+			const pi = data.quota_snapshots.premium_interactions;
+			const remaining = pi.remaining ?? 0;
+			const entitlement = pi.entitlement ?? 0;
+			const usedPercent = Math.max(0, 100 - (pi.percent_remaining || 0));
 			windows.push({
-				label: "Premium",
-				usedPercent: Math.max(0, 100 - (data.quota_snapshots.premium_interactions.percent_remaining || 0)),
+				label: `Premium`,
+				usedPercent,
+				resetDescription: resetDesc ? `${resetDesc} (${remaining}/${entitlement})` : `${remaining}/${entitlement}`,
 			});
 		}
 
-		if (data.quota_snapshots?.chat) {
+		// Chat quota - often unlimited, only show if limited
+		if (data.quota_snapshots?.chat && !data.quota_snapshots.chat.unlimited) {
+			const chat = data.quota_snapshots.chat;
 			windows.push({
 				label: "Chat",
-				usedPercent: Math.max(0, 100 - (data.quota_snapshots.chat.percent_remaining || 0)),
+				usedPercent: Math.max(0, 100 - (chat.percent_remaining || 0)),
+				resetDescription: resetDesc,
 			});
 		}
 
