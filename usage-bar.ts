@@ -210,44 +210,66 @@ async function fetchClaudeUsage(): Promise<UsageSnapshot> {
 // Copilot Usage
 // ============================================================================
 
-function loadCopilotToken(): string | undefined {
+function loadCopilotRefreshToken(): string | undefined {
+	// The copilot_internal/user endpoint needs the GitHub OAuth token (ghu_*),
+	// NOT the Copilot session token (tid=*). The refresh token IS the GitHub OAuth token.
 	const authPath = path.join(os.homedir(), ".pi", "agent", "auth.json");
 	try {
 		if (fs.existsSync(authPath)) {
 			const data = JSON.parse(fs.readFileSync(authPath, "utf-8"));
-			if (data["github-copilot"]?.access) return data["github-copilot"].access;
+			// Use refresh token (GitHub OAuth token ghu_*) for the usage API
+			if (data["github-copilot"]?.refresh) return data["github-copilot"].refresh;
 		}
-	} catch {}
-
-	try {
-		return execSync("gh auth token 2>/dev/null", { encoding: "utf-8", stdio: ["pipe", "pipe", "pipe"] }).trim();
 	} catch {}
 
 	return undefined;
 }
 
-async function fetchCopilotUsage(): Promise<UsageSnapshot> {
-	const token = loadCopilotToken();
+async function fetchCopilotUsage(_modelRegistry: any): Promise<UsageSnapshot> {
+	const token = loadCopilotRefreshToken();
 	if (!token) {
 		return { provider: "copilot", displayName: "Copilot", windows: [], error: "No token" };
 	}
 
-	try {
+	const headersBase = {
+		"Editor-Version": "vscode/1.96.2",
+		"User-Agent": "GitHubCopilotChat/0.26.7",
+		"X-Github-Api-Version": "2025-04-01",
+		Accept: "application/json",
+	};
+
+	const tryFetch = async (authHeader: string) => {
 		const controller = new AbortController();
 		setTimeout(() => controller.abort(), 5000);
 
 		const res = await fetch("https://api.github.com/copilot_internal/user", {
 			headers: {
-				Authorization: `token ${token}`,
-				"Editor-Version": "vscode/1.96.2",
-				"User-Agent": "GitHubCopilotChat/0.26.7",
-				"X-Github-Api-Version": "2025-04-01",
+				...headersBase,
+				Authorization: authHeader,
 			},
 			signal: controller.signal,
 		});
+		return res;
+	};
 
-		if (!res.ok) {
-			return { provider: "copilot", displayName: "Copilot", windows: [], error: `HTTP ${res.status}` };
+	try {
+		// Copilot access tokens (from /login github-copilot) expect Bearer. PATs accept "token".
+		// GitHub OAuth token (ghu_*) requires "token" prefix, not Bearer
+		const attempts = [`token ${token}`];
+		let lastStatus: number | undefined;
+		let res: Response | undefined;
+
+		for (const auth of attempts) {
+			res = await tryFetch(auth);
+			lastStatus = res.status;
+			if (res.ok) break;
+			if (res.status === 401 || res.status === 403) continue; // try next scheme
+			break;
+		}
+
+		if (!res || !res.ok) {
+			const status = lastStatus ?? 0;
+			return { provider: "copilot", displayName: "Copilot", windows: [], error: `HTTP ${status}` };
 		}
 
 		const data = await res.json() as any;
@@ -718,7 +740,7 @@ class UsageComponent {
 		// Fetch usage and status in parallel
 		const [claude, copilot, gemini, codex, kiro, zai, claudeStatus, copilotStatus, geminiStatus, codexStatus] = await Promise.all([
 			timeout(fetchClaudeUsage(), 6000, { provider: "anthropic", displayName: "Claude", windows: [], error: "Timeout" }),
-			timeout(fetchCopilotUsage(), 6000, { provider: "copilot", displayName: "Copilot", windows: [], error: "Timeout" }),
+			timeout(fetchCopilotUsage(this.modelRegistry), 6000, { provider: "copilot", displayName: "Copilot", windows: [], error: "Timeout" }),
 			timeout(fetchGeminiUsage(this.modelRegistry), 6000, { provider: "gemini", displayName: "Gemini", windows: [], error: "Timeout" }),
 			timeout(fetchCodexUsage(this.modelRegistry), 6000, { provider: "codex", displayName: "Codex", windows: [], error: "Timeout" }),
 			timeout(fetchKiroUsage(), 6000, { provider: "kiro", displayName: "Kiro", windows: [], error: "Timeout" }),
@@ -832,8 +854,8 @@ export default function (pi: ExtensionAPI) {
 			}
 
 			const modelRegistry = ctx.modelRegistry;
-			await ctx.ui.custom((tui, theme, done) => {
-				return new UsageComponent(tui, theme, () => done(undefined), modelRegistry);
+			await ctx.ui.custom((tui, theme, _kb, done) => {
+				return new UsageComponent(tui, theme, () => done(), modelRegistry);
 			});
 		},
 	});
