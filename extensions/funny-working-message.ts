@@ -7,6 +7,8 @@
 
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 
+const DEBUG_FORCE_MESSAGE: string | undefined = "<<< FUN-WORKING ACTIVE >>>";
+
 const WORDS = [
 	"Simmering... (esc to interrupt)",
 	"Julienning... (esc to interrupt)",
@@ -116,6 +118,7 @@ const WORDS = [
 ];
 
 function pickWord(): string {
+	if (DEBUG_FORCE_MESSAGE) return DEBUG_FORCE_MESSAGE;
 	return WORDS[Math.floor(Math.random() * WORDS.length)] ?? "Working... (esc to interrupt)";
 }
 
@@ -134,7 +137,9 @@ export default function (pi: ExtensionAPI) {
 
 			// If we toggle while the agent is already streaming, apply immediately.
 			if (!ctx.isIdle()) {
-				ctx.ui.setWorkingMessage(pickWord());
+				const msg = pickWord();
+				ctx.ui.setStatus("fun-working-debug", `command: setWorkingMessage=${JSON.stringify(msg)}`);
+				ctx.ui.setWorkingMessage(msg);
 			}
 			ctx.ui.notify("Funny working message enabled", "info");
 		},
@@ -143,12 +148,15 @@ export default function (pi: ExtensionAPI) {
 	pi.on("agent_start", (_event, ctx) => {
 		if (!enabled) return;
 		if (!ctx.hasUI) return;
-		ctx.ui.setWorkingMessage(pickWord());
+		const msg = pickWord();
+		ctx.ui.setStatus("fun-working-debug", `agent_start: setWorkingMessage=${JSON.stringify(msg)}`);
+		ctx.ui.setWorkingMessage(msg);
 	});
 
 	pi.on("agent_end", (_event, ctx) => {
 		if (!enabled) return;
 		if (!ctx.hasUI) return;
+		ctx.ui.setStatus("fun-working-debug", "agent_end: restore default working message");
 		ctx.ui.setWorkingMessage();
 	});
 }
