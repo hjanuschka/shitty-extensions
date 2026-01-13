@@ -1,5 +1,5 @@
 /**
- * Handoff hook - transfer context to a new focused session
+ * Handoff extension - transfer context to a new focused session
  *
  * Instead of compacting (which is lossy), handoff extracts what matters
  * for your next task and creates a new session with a generated prompt.
@@ -13,7 +13,7 @@
  */
 
 import { complete, type Message } from "@mariozechner/pi-ai";
-import type { HookAPI, SessionEntry } from "@mariozechner/pi-coding-agent";
+import type { ExtensionAPI, SessionEntry } from "@mariozechner/pi-coding-agent";
 import { BorderedLoader, convertToLlm, serializeConversation } from "@mariozechner/pi-coding-agent";
 
 const SYSTEM_PROMPT = `You are a context transfer assistant. Given a conversation history and the user's goal for a new thread, generate a focused prompt that:
@@ -38,7 +38,7 @@ Files involved:
 ## Task
 [Clear description of what to do next based on user's goal]`;
 
-export default function (pi: HookAPI) {
+export default function (pi: ExtensionAPI) {
 	pi.registerCommand("handoff", {
 		description: "Transfer context to a new focused session",
 		handler: async (args, ctx) => {
@@ -125,7 +125,7 @@ export default function (pi: HookAPI) {
 			}
 
 			// Let user edit the generated prompt
-			const editedPrompt = await ctx.ui.editor("Edit handoff prompt (ctrl+enter to submit, esc to cancel)", result);
+			const editedPrompt = await ctx.ui.editor("Edit handoff prompt (enter to submit, shift+enter for newline, esc to cancel)", result);
 
 			if (editedPrompt === undefined) {
 				ctx.ui.notify("Cancelled", "info");

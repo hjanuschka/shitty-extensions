@@ -155,14 +155,7 @@ export default function (pi: ExtensionAPI) {
     
     if (prompt.includes("ultrathink")) {
       return {
-        systemPromptAppend: `
-The user has requested ULTRATHINK mode. This means:
-- Think EXTREMELY deeply about the problem
-- Consider multiple approaches and their tradeoffs  
-- Be extra thorough in your analysis
-- Take your time to reason through complex aspects
-- Provide comprehensive, well-thought-out responses
-`,
+        systemPrompt: `${event.systemPrompt}\n\nThe user has requested ULTRATHINK mode. This means:\n- Think EXTREMELY deeply about the problem\n- Consider multiple approaches and their tradeoffs  \n- Be extra thorough in your analysis\n- Take your time to reason through complex aspects\n- Provide comprehensive, well-thought-out responses\n`,
       };
     }
   });

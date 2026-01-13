@@ -1,5 +1,5 @@
 /**
- * Plan Mode Hook
+ * Plan Mode Extension
  *
  * Provides a Claude Code-style "plan mode" for safe code exploration.
  * When enabled, the agent can only use read-only tools and cannot modify files.
@@ -14,13 +14,12 @@
  * - Uses ID-based tracking: agent outputs [DONE:id] to mark steps complete
  *
  * Usage:
- * 1. Copy this file to ~/.pi/agent/hooks/ or your project's .pi/hooks/
+ * 1. Copy this file to ~/.pi/agent/extensions/ or your project's .pi/extensions/
  * 2. Use /plan to toggle plan mode on/off
  * 3. Or start in plan mode with --plan flag
  */
 
-import type { HookAPI, HookContext } from "@mariozechner/pi-coding-agent/hooks";
-import { Key } from "@mariozechner/pi-tui";
+import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
 
 // Read-only tools for plan mode
 const PLAN_MODE_TOOLS = ["read", "bash", "grep", "find", "ls"];
@@ -207,7 +206,7 @@ function extractTodoItems(message: string): TodoItem[] {
 	return items;
 }
 
-export default function planModeHook(pi: HookAPI) {
+export default function planModeHook(pi: ExtensionAPI) {
 	let planModeEnabled = false;
 	let toolsCalledThisTurn = false;
 	let executionMode = false;
@@ -221,7 +220,7 @@ export default function planModeHook(pi: HookAPI) {
 	});
 
 	// Helper to update status displays
-	function updateStatus(ctx: HookContext) {
+	function updateStatus(ctx: ExtensionContext) {
 		if (executionMode && todoItems.length > 0) {
 			const completed = todoItems.filter((t) => t.completed).length;
 			ctx.ui.setStatus("plan-mode", ctx.ui.theme.fg("accent", `📋 ${completed}/${todoItems.length}`));
@@ -249,7 +248,7 @@ export default function planModeHook(pi: HookAPI) {
 		}
 	}
 
-	function togglePlanMode(ctx: HookContext) {
+	function togglePlanMode(ctx: ExtensionContext) {
 		planModeEnabled = !planModeEnabled;
 		executionMode = false;
 		todoItems = [];
@@ -293,7 +292,7 @@ export default function planModeHook(pi: HookAPI) {
 	});
 
 	// Register Ctrl+X shortcut for plan mode toggle
-	pi.registerShortcut(Key.ctrl("x"), {
+	pi.registerShortcut("ctrl+x", {
 		description: "Toggle plan mode",
 		handler: async (ctx) => {
 			togglePlanMode(ctx);
