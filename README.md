@@ -14,6 +14,7 @@ Custom extensions and skills for [pi coding agent](https://github.com/badlogic/p
   - [status-widget.ts](#status-widgetts) - Provider status in footer
   - [cost-tracker.ts](#cost-trackerts) - Session spending analysis
   - [funny-working-message.ts](#funny-working-messagets) - Randomized spinner "Working..." text
+  - [speedreading.ts](#speedreadingts) - RSVP speed reader (Spritz-style)
 - [Available Skills](#available-skills)
   - [wienerlinien](#wienerlinien) - Vienna public transport real-time data
   - [oebb-scotty](#oebb-scotty) - Austrian rail travel planner (ÖBB)
@@ -235,6 +236,68 @@ Analyze spending from pi session logs.
 
 ---
 
+### speedreading.ts
+
+RSVP (Rapid Serial Visual Presentation) speed reader using Spritz-style technique. Displays words one at a time with the ORP (Optimal Recognition Point) highlighted for faster reading.
+
+#### Commands
+
+| Command | Description |
+|---------|-------------|
+| `/speedread` | Speed read the last AI response (default) |
+| `/speedread <text>` | Speed read provided text |
+| `/speedread -c` | Speed read from clipboard |
+| `/speedread -l` | Speed read last AI response (explicit) |
+| `/speedread -wpm 500` | Set words per minute (default: 400) |
+
+#### Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+R` | Speed read last AI response |
+
+#### Controls (in reader)
+
+| Key | Action |
+|-----|--------|
+| `SPACE` | Play/pause |
+| `←` / `→` | Seek ±1 word |
+| `[` / `]` | Jump ±10 words |
+| `↑` / `↓` | Adjust speed (±25 WPM) |
+| `B` | Toggle big ASCII art font |
+| `R` | Restart |
+| `Q` / `ESC` | Quit |
+
+#### Features
+
+- **ORP highlighting**: The optimal recognition point (roughly 1/3 into each word) is highlighted in red
+- **Adaptive timing**: Longer words and punctuation get extra display time
+- **Big font mode**: Toggle ASCII art block letters for larger display
+- **Progress tracking**: Shows word count, actual WPM, and ETA
+
+#### Example
+
+```
+  ╭──────────────────────────────────────────────────────────────────────────────────────╮
+  │                                                                                      │
+  │                                           │                                          │
+  ├───────────────────────────────────────────┼──────────────────────────────────────────┤
+  │                                       reading                                        │
+  ├───────────────────────────────────────────┼──────────────────────────────────────────┤
+  │                                           │                                          │
+  │                                                                                      │
+  │  ────────────────────────────────────────────────────────────────────────────400 wpm │
+  ╰──────────────────────────────────────────────────────────────────────────────────────╯
+
+  ▶ 42/128
+
+  SPACE play/pause  ←→ ±1  [] ±10  ↑↓ speed  B big font  R restart  Q quit
+```
+
+The `a` in "reading" would be highlighted in red as the ORP.
+
+---
+
 ## Available Skills
 
 Skills are located in the `skills/` directory. They provide domain-specific knowledge that agents automatically load when relevant tasks are detected.
@@ -380,7 +443,8 @@ shitty-extensions/
 │   ├── usage-bar.ts
 │   ├── ultrathink.ts
 │   ├── status-widget.ts
-│   └── cost-tracker.ts
+│   ├── cost-tracker.ts
+│   └── speedreading.ts
 ├── skills/              # Agent skills (auto-loaded by task)
 │   ├── wienerlinien/
 │   │   ├── SKILL.md     # Skill definition & API docs
