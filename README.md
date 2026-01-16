@@ -15,6 +15,7 @@ Custom extensions and skills for [pi coding agent](https://github.com/badlogic/p
   - [cost-tracker.ts](#cost-trackerts) - Session spending analysis
   - [funny-working-message.ts](#funny-working-messagets) - Randomized spinner "Working..." text
   - [speedreading.ts](#speedreadingts) - RSVP speed reader (Spritz-style)
+  - [loop.ts](#loopts) - Conditional loops by mitsuhiko
 - [Available Skills](#available-skills)
   - [wienerlinien](#wienerlinien) - Vienna public transport real-time data
   - [oebb-scotty](#oebb-scotty) - Austrian rail travel planner (ÖBB)
@@ -295,6 +296,30 @@ RSVP (Rapid Serial Visual Presentation) speed reader using Spritz-style techniqu
 ```
 
 The `a` in "reading" would be highlighted in red as the ORP.
+
+---
+
+### loop.ts
+
+**Author:** [mitsuhiko](https://github.com/mitsuhiko) | **Origin:** [agent-stuff](https://github.com/mitsuhiko/agent-stuff/blob/main/pi-extensions/loop.ts)
+
+Start a follow-up loop until a breakout condition is met.
+
+#### Commands
+
+| Command | Description |
+|---------|-------------|
+| `/loop` | Open loop mode selector |
+| `/loop tests` | Loop until tests pass |
+| `/loop custom <condition>` | Loop until custom condition met |
+| `/loop self` | Agent decides when to stop |
+
+#### Features
+
+- **Breakout conditions**: Define when the loop should stop (tests pass, custom condition, etc.)
+- **Status widget**: Shows active loop state and turn count
+- **Compaction**: Preserves loop state during context compaction
+- **Auto-continue**: Automatically triggers follow-up prompts until done
 
 ---
 
