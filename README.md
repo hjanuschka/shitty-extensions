@@ -301,7 +301,7 @@ The `a` in "reading" would be highlighted in red as the ORP.
 
 ### loop.ts
 
-**Author:** [mitsuhiko](https://github.com/mitsuhiko) | **Origin:** [agent-stuff](https://github.com/mitsuhiko/agent-stuff/blob/main/pi-extensions/loop.ts)
+**Author:** [mitsuhiko](https://github.com/mitsuhiko) ([@mitsuhiko](https://twitter.com/mitsuhiko)) | **Origin:** [agent-stuff](https://github.com/mitsuhiko/agent-stuff/blob/main/pi-extensions/loop.ts)
 
 Start a follow-up loop until a breakout condition is met.
 
