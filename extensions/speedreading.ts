@@ -6,15 +6,22 @@
  *
  * Usage:
  *   /speedread <text>           - Speed read the provided text
+ *   /speedread @path/to/file    - Speed read a file (supports ~/path)
+ *   /speedread -f path/to/file  - Speed read a file (alternative syntax)
  *   /speedread -c               - Speed read from clipboard
  *   /speedread -l               - Speed read the last assistant message
- *   /speedread -wpm 400 <text>  - Set words per minute (default: 300)
+ *   /speedread -wpm 400 <text>  - Set words per minute (default: 400)
+ *   /speedread                  - Speed read last assistant message (default)
  */
 
 import type { ExtensionAPI, ExtensionContext, SessionEntry } from "@mariozechner/pi-coding-agent";
-import { matchesKey, visibleWidth } from "@mariozechner/pi-tui";
+import { matchesKey, visibleWidth, truncateToWidth } from "@mariozechner/pi-tui";
 import { exec } from "node:child_process";
 import { promisify } from "node:util";
+import { readFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
+import { homedir } from "node:os";
 
 const execAsync = promisify(exec);
 
@@ -331,9 +338,13 @@ class SpeedReaderComponent {
 		const lines: string[] = [];
 		const boxWidth = Math.min(90, width - 4);
 
-		const padLine = (line: string): string => {
+		// Truncate and pad line to exactly fit width
+		const fitLine = (line: string): string => {
 			const len = visibleWidth(line);
-			return line + " ".repeat(Math.max(0, width - len));
+			if (len > width) {
+				return truncateToWidth(line, width, "");
+			}
+			return line + " ".repeat(width - len);
 		};
 
 		// Get current word and format with ORP
@@ -385,48 +396,55 @@ class SpeedReaderComponent {
 		lines.push("");
 
 		// Top border with rounded corners
-		lines.push(padLine(dim("  ╭" + "─".repeat(boxWidth) + "╮")));
+		lines.push(fitLine(dim("  ╭" + "─".repeat(boxWidth) + "╮")));
 
 		// Empty space above
-		lines.push(padLine(dim("  │") + " ".repeat(boxWidth) + dim("│")));
-		lines.push(padLine(dim("  │") + " ".repeat(boxWidth) + dim("│")));
+		lines.push(fitLine(dim("  │") + " ".repeat(boxWidth) + dim("│")));
+		lines.push(fitLine(dim("  │") + " ".repeat(boxWidth) + dim("│")));
 
 		// Upper guide line - vertical tick at ORP
 		const upperGuide = " ".repeat(guideOffset) + dim("│");
 		const upperGuidePadded = upperGuide + " ".repeat(Math.max(0, boxWidth - visibleWidth(upperGuide)));
-		lines.push(padLine(dim("  │") + upperGuidePadded + dim("│")));
+		lines.push(fitLine(dim("  │") + upperGuidePadded + dim("│")));
 
 		// Horizontal separator with gap at ORP pivot
 		const leftSep = "─".repeat(guideOffset);
 		const rightSep = "─".repeat(Math.max(0, boxWidth - guideOffset - 1));
-		lines.push(padLine(dim("  ├" + leftSep + "┼" + rightSep + "┤")));
+		lines.push(fitLine(dim("  ├" + leftSep + "┼" + rightSep + "┤")));
 
 		// The word display (1 or 3 lines depending on mode)
 		for (const wordLine of wordLines) {
-			const linePadded = wordLine + " ".repeat(Math.max(0, boxWidth - visibleWidth(wordLine)));
-			lines.push(padLine(dim("  │") + linePadded + dim("│")));
+			// Truncate word line if it exceeds box width
+			const truncatedWord = visibleWidth(wordLine) > boxWidth 
+				? truncateToWidth(wordLine, boxWidth, "")
+				: wordLine;
+			const linePadded = truncatedWord + " ".repeat(Math.max(0, boxWidth - visibleWidth(truncatedWord)));
+			lines.push(fitLine(dim("  │") + linePadded + dim("│")));
 		}
 
 		// Lower horizontal separator
-		lines.push(padLine(dim("  ├" + leftSep + "┼" + rightSep + "┤")));
+		lines.push(fitLine(dim("  ├" + leftSep + "┼" + rightSep + "┤")));
 
 		// Lower guide line
 		const lowerGuide = " ".repeat(guideOffset) + dim("│");
 		const lowerGuidePadded = lowerGuide + " ".repeat(Math.max(0, boxWidth - visibleWidth(lowerGuide)));
-		lines.push(padLine(dim("  │") + lowerGuidePadded + dim("│")));
+		lines.push(fitLine(dim("  │") + lowerGuidePadded + dim("│")));
 
 		// Empty space below
-		lines.push(padLine(dim("  │") + " ".repeat(boxWidth) + dim("│")));
+		lines.push(fitLine(dim("  │") + " ".repeat(boxWidth) + dim("│")));
 
 		// Progress bar line
 		const progressBar = "─".repeat(filledWidth) + dim("─".repeat(progressBarWidth - filledWidth));
 		const wpmDisplay = dim(`${this.wpm} wpm`);
 		const progressLine = "  " + progressBar + "  " + wpmDisplay;
-		const progressLinePadded = progressLine + " ".repeat(Math.max(0, boxWidth - visibleWidth(progressLine)));
-		lines.push(padLine(dim("  │") + progressLinePadded + dim("│")));
+		const truncatedProgress = visibleWidth(progressLine) > boxWidth
+			? truncateToWidth(progressLine, boxWidth, "")
+			: progressLine;
+		const progressLinePadded = truncatedProgress + " ".repeat(Math.max(0, boxWidth - visibleWidth(truncatedProgress)));
+		lines.push(fitLine(dim("  │") + progressLinePadded + dim("│")));
 
 		// Bottom border
-		lines.push(padLine(dim("  ╰" + "─".repeat(boxWidth) + "╯")));
+		lines.push(fitLine(dim("  ╰" + "─".repeat(boxWidth) + "╯")));
 
 		// Status and controls below the box
 		lines.push("");
@@ -436,20 +454,23 @@ class SpeedReaderComponent {
 				? yellow("  ▶ Press SPACE to start")
 				: yellow("  ⏸ PAUSED") + dim(` - ${this.currentIndex + 1}/${this.words.length}`)
 			: dim(`  ▶ ${this.currentIndex + 1}/${this.words.length}`);
-		lines.push(padLine(status));
+		lines.push(fitLine(status));
 
 		lines.push("");
-		lines.push(
-			padLine(
-				dim("  SPACE") + " play/pause  " +
-				dim("←→") + " ±1  " +
-				dim("[]") + " ±10  " +
-				dim("↑↓") + " speed  " +
-				dim("B") + " big font  " +
-				dim("R") + " restart  " +
-				dim("Q") + " quit"
-			)
-		);
+		// Use shorter help text for narrow terminals
+		const helpFull = dim("  SPACE") + " play/pause  " +
+			dim("←→") + " ±1  " +
+			dim("[]") + " ±10  " +
+			dim("↑↓") + " speed  " +
+			dim("B") + " big font  " +
+			dim("R") + " restart  " +
+			dim("Q") + " quit";
+		const helpShort = dim("  SPC") + " play  " +
+			dim("←→") + " seek  " +
+			dim("↑↓") + " speed  " +
+			dim("Q") + " quit";
+		const helpText = width > 80 ? helpFull : helpShort;
+		lines.push(fitLine(helpText));
 		lines.push("");
 
 		this.cachedLines = lines;
@@ -465,6 +486,35 @@ async function getClipboardContent(): Promise<string> {
 	} catch {
 		throw new Error("Failed to read clipboard");
 	}
+}
+
+/**
+ * Expand ~ to home directory and resolve path
+ */
+function expandPath(filepath: string): string {
+	if (filepath.startsWith("~/")) {
+		return resolve(homedir(), filepath.slice(2));
+	}
+	if (filepath.startsWith("~")) {
+		return resolve(homedir(), filepath.slice(1));
+	}
+	return resolve(filepath);
+}
+
+/**
+ * Read file content, supporting @ prefix and ~ expansion
+ */
+async function readFileContent(filepath: string): Promise<string> {
+	// Remove @ prefix if present
+	const cleanPath = filepath.startsWith("@") ? filepath.slice(1) : filepath;
+	const fullPath = expandPath(cleanPath);
+	
+	if (!existsSync(fullPath)) {
+		throw new Error(`File not found: ${fullPath}`);
+	}
+	
+	const content = await readFile(fullPath, "utf-8");
+	return content;
 }
 
 export default function (pi: ExtensionAPI) {
@@ -519,6 +569,32 @@ export default function (pi: ExtensionAPI) {
 					}
 					if (!text) {
 						ctx.ui.notify("No assistant message found", "error");
+						return;
+					}
+					i++;
+					continue;
+				}
+
+				if (token === "-f" || token === "--file") {
+					i++;
+					if (i < tokens.length) {
+						try {
+							text = await readFileContent(tokens[i]);
+						} catch (err) {
+							ctx.ui.notify(`Failed to read file: ${err instanceof Error ? err.message : String(err)}`, "error");
+							return;
+						}
+					}
+					i++;
+					continue;
+				}
+
+				// Handle @filepath syntax (e.g., @./file.md or @~/file.md)
+				if (token.startsWith("@") && token.length > 1) {
+					try {
+						text = await readFileContent(token);
+					} catch (err) {
+						ctx.ui.notify(`Failed to read file: ${err instanceof Error ? err.message : String(err)}`, "error");
 						return;
 					}
 					i++;
