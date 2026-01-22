@@ -16,6 +16,7 @@ Custom extensions and skills for [pi coding agent](https://github.com/badlogic/p
   - [funny-working-message.ts](#funny-working-messagets) - Randomized spinner "Working..." text
   - [speedreading.ts](#speedreadingts) - RSVP speed reader (Spritz-style)
   - [loop.ts](#loopts) - Conditional loops by mitsuhiko
+  - [flicker-corp.ts](#flicker-corpts) - Authentic fullscreen flicker experience
 - [Available Skills](#available-skills)
   - [wienerlinien](#wienerlinien) - Vienna public transport real-time data
   - [oebb-scotty](#oebb-scotty) - Austrian rail travel planner (ÖBB)
@@ -320,6 +321,21 @@ Start a follow-up loop until a breakout condition is met.
 - **Status widget**: Shows active loop state and turn count
 - **Compaction**: Preserves loop state during context compaction
 - **Auto-continue**: Automatically triggers follow-up prompts until done
+
+---
+
+### flicker-corp.ts
+
+**Authentic FULLSCREEN FLICKER experience.**
+
+Randomly glitches your screen with intense colors and noise to keep you on your toes. "Just be annoying!"
+
+#### Commands
+
+| Command | Description |
+|---------|-------------|
+| `/flicker-corp` | Toggle the flicker experience |
+| `/signature-flicker` | Alias for flicker-corp |
 
 ---
 
