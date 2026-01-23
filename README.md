@@ -4,6 +4,7 @@ Custom extensions and skills for [pi coding agent](https://github.com/badlogic/p
 
 ## Table of Contents
 
+- [Installation](#installation)
 - [Available Extensions](#available-extensions)
   - [oracle.ts](#oraclets) - Get second opinions from other AI models
   - [memory-mode.ts](#memory-modets) - Save instructions to AGENTS.md
@@ -18,10 +19,95 @@ Custom extensions and skills for [pi coding agent](https://github.com/badlogic/p
   - [loop.ts](#loopts) - Conditional loops by mitsuhiko
   - [flicker-corp.ts](#flicker-corpts) - Authentic fullscreen flicker experience
 - [Available Skills](#available-skills)
-  - [wienerlinien](#wienerlinien) - Vienna public transport real-time data
-  - [oebb-scotty](#oebb-scotty) - Austrian rail travel planner (ÖBB)
-- [Installation](#installation)
+  - [a-nach-b](#a-nach-b) - Austrian public transport (VOR AnachB)
 - [License](#license)
+
+---
+
+## Installation
+
+### Via npm (recommended)
+
+Install globally to make all extensions available to pi:
+
+```bash
+npm install -g shitty-extensions
+```
+
+Then add to your `~/.pi/agent/settings.json`:
+
+```json
+{
+  "extensions": ["shitty-extensions"]
+}
+```
+
+Or reference individual extensions:
+
+```json
+{
+  "extensions": [
+    "shitty-extensions/extensions/oracle.ts",
+    "shitty-extensions/extensions/usage-bar.ts"
+  ]
+}
+```
+
+### Via CLI flag
+
+Load extensions for a single session:
+
+```bash
+pi -e shitty-extensions
+```
+
+Or load specific extensions:
+
+```bash
+pi -e shitty-extensions/extensions/oracle.ts
+```
+
+### Skills Installation
+
+Skills are discovered from specific directories. After installing the npm package, symlink the skills:
+
+```bash
+# Find where npm installed the package
+SHITTY_EXT=$(npm root -g)/shitty-extensions
+
+# Symlink skills for pi
+ln -s $SHITTY_EXT/skills/a-nach-b ~/.pi/agent/skills/
+
+# Optional: Also for Claude Code and Codex CLI
+ln -s $SHITTY_EXT/skills/a-nach-b ~/.claude/skills/
+ln -s $SHITTY_EXT/skills/a-nach-b ~/.codex/skills/
+```
+
+Or add the package's skills directory to your settings.json:
+
+```json
+{
+  "skills": {
+    "customDirectories": ["<path-to-global-node-modules>/shitty-extensions/skills"]
+  }
+}
+```
+
+### Manual installation
+
+Clone the repo and reference directly:
+
+```bash
+git clone https://github.com/hjanuschka/shitty-extensions.git ~/shitty-extensions
+
+# In settings.json
+{
+  "extensions": ["~/shitty-extensions"]
+}
+
+# Or via CLI
+pi -e ~/shitty-extensions
+```
 
 ---
 
@@ -343,132 +429,36 @@ Randomly glitches your screen with intense colors and noise to keep you on your 
 
 Skills are located in the `skills/` directory. They provide domain-specific knowledge that agents automatically load when relevant tasks are detected.
 
-### wienerlinien
+### a-nach-b
 
-🚇 Vienna public transport (Wiener Linien) real-time data.
+🚇 Austrian public transport (VOR AnachB) for all of Austria.
 
-Query real-time departures, service disruptions, elevator outages, and stop information for Vienna's U-Bahn, trams, and buses.
+Query real-time departures, search stations/stops, plan routes between locations, and check service disruptions for Austrian trains, buses, trams, and metro (U-Bahn).
 
 #### What it does
 
 - **Real-time departures** at any stop
-- **Service disruptions** (short-term and long-term)
-- **Elevator outages** at U-Bahn stations
-- **Stop search** by name to find RBL stop IDs
+- **Route planning** between any two locations
+- **Service disruptions** and alerts
+- **Station search** by name to find station IDs
 
 #### Example queries
 
+- "How do I get from Vienna to Salzburg?"
 - "When is the next U1 from Stephansplatz?"
-- "Are there any U-Bahn disruptions?"
-- "Which elevators are out of service?"
+- "Are there any train disruptions today?"
 - "Find stop ID for Karlsplatz"
 
 #### Included scripts
 
 | Script | Description |
 |--------|-------------|
-| `search-stop.sh` | Find stop IDs by name |
+| `search.sh` | Find stations/stops by name |
 | `departures.sh` | Get real-time departures |
+| `route.sh` | Plan a trip between locations |
 | `disruptions.sh` | List service disruptions |
-| `elevators.sh` | Show elevator outages |
 
-#### Common Stop IDs
-
-| Stop | RBL IDs | Lines |
-|------|---------|-------|
-| Stephansplatz | 252, 4116, 4119 | U1, U3 |
-| Karlsplatz | 143, 144, 4101, 4102 | U1, U2, U4 |
-| Westbahnhof | 1346, 1350, 1368 | U3, U6 |
-| Praterstern | 4205, 4210 | U1, U2 |
-| Schwedenplatz | 1489, 1490, 4103 | U1, U4 |
-
-See [skills/wienerlinien/SKILL.md](skills/wienerlinien/SKILL.md) for full API documentation.
-
----
-
-### oebb-scotty
-
-🚂 Austrian rail travel planner (ÖBB Scotty).
-
-Plan train journeys in Austria, check departures/arrivals at stations, and get service disruptions for ÖBB trains, S-Bahn, regional trains, and connections to neighboring countries.
-
-#### What it does
-
-- **Trip planning** between any two stations
-- **Station departures/arrivals** with real-time updates
-- **Service disruptions** and alerts
-- **Station search** by name
-
-#### Example queries
-
-- "How do I get from Vienna to Salzburg?"
-- "When is the next train from Wien Hbf to Graz?"
-- "Show arrivals at Linz Hbf"
-- "Are there any train disruptions today?"
-
-#### Included scripts
-
-| Script | Description |
-|--------|-------------|
-| `search-station.sh` | Find stations by name |
-| `departures.sh` | Get station departures |
-| `arrivals.sh` | Get station arrivals |
-| `trip.sh` | Plan a journey |
-| `disruptions.sh` | List service alerts |
-
-#### Common Station IDs
-
-| Station | extId |
-|---------|-------|
-| Wien Hbf | 1190100 |
-| Wien Meidling | 1190528 |
-| Salzburg Hbf | 8100002 |
-| Graz Hbf | 8100173 |
-| Linz Hbf | 8100013 |
-| Innsbruck Hbf | 8100108 |
-
-See [skills/oebb-scotty/SKILL.md](skills/oebb-scotty/SKILL.md) for full API documentation.
-
----
-
-## Installation
-
-### Via agent-config (recommended)
-
-If you use [agent-config](https://github.com/hjanuschka/agent-config), extensions and skills are installed automatically:
-
-```bash
-cd ~/agent-config && ./install.sh
-```
-
-This will:
-- Clone/update this repo to `~/shitty-extensions`
-- Symlink `extensions/` to `~/.pi/agent/extensions`
-- Symlink skills from `skills/` to `~/.pi/agent/skills/`, `~/.claude/skills/`, `~/.codex/skills/`
-
-### Manual installation
-
-#### Extensions
-
-```bash
-# Option 1: Symlink extensions directory
-ln -s ~/shitty-extensions/extensions ~/.pi/agent/extensions
-
-# Option 2: Copy individual files
-cp ~/shitty-extensions/extensions/oracle.ts ~/.pi/agent/extensions/
-
-# Option 3: Use -e flag
-pi -e ~/shitty-extensions/extensions/oracle.ts
-```
-
-#### Skills
-
-```bash
-# Symlink individual skills
-ln -s ~/shitty-extensions/skills/wienerlinien ~/.pi/agent/skills/
-ln -s ~/shitty-extensions/skills/wienerlinien ~/.claude/skills/
-ln -s ~/shitty-extensions/skills/wienerlinien ~/.codex/skills/
-```
+See [skills/a-nach-b/SKILL.md](skills/a-nach-b/SKILL.md) for full API documentation.
 
 ---
 
@@ -476,6 +466,7 @@ ln -s ~/shitty-extensions/skills/wienerlinien ~/.codex/skills/
 
 ```
 shitty-extensions/
+├── package.json         # npm package config with pi extensions field
 ├── extensions/          # Pi agent extensions (.ts files)
 │   ├── oracle.ts
 │   ├── memory-mode.ts
@@ -485,23 +476,17 @@ shitty-extensions/
 │   ├── ultrathink.ts
 │   ├── status-widget.ts
 │   ├── cost-tracker.ts
-│   └── speedreading.ts
-├── skills/              # Agent skills (auto-loaded by task)
-│   ├── wienerlinien/
-│   │   ├── SKILL.md     # Skill definition & API docs
-│   │   ├── README.md
-│   │   ├── departures.sh
-│   │   ├── disruptions.sh
-│   │   ├── elevators.sh
-│   │   └── search-stop.sh
-│   └── oebb-scotty/
+│   ├── funny-working-message.ts
+│   ├── speedreading.ts
+│   ├── loop.ts
+│   └── flicker-corp.ts
+├── skills/              # Agent skills (symlink after install)
+│   └── a-nach-b/
 │       ├── SKILL.md     # Skill definition & API docs
-│       ├── README.md
-│       ├── arrivals.sh
+│       ├── search.sh
 │       ├── departures.sh
-│       ├── disruptions.sh
-│       ├── search-station.sh
-│       └── trip.sh
+│       ├── route.sh
+│       └── disruptions.sh
 └── README.md
 ```
 
