@@ -1,0 +1,36 @@
+{
+  "name": "shitty-extensions",
+  "version": "1.0.1",
+  "description": "Custom extensions and skills for pi coding agent",
+  "type": "module",
+  "keywords": [
+    "pi",
+    "pi-coding-agent",
+    "extensions",
+    "skills",
+    "ai",
+    "claude",
+    "coding-assistant"
+  ],
+  "author": "hjanuschka",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hjanuschka/shitty-extensions.git"
+  },
+  "homepage": "https://github.com/hjanuschka/shitty-extensions#readme",
+  "bugs": {
+    "url": "https://github.com/hjanuschka/shitty-extensions/issues"
+  },
+  "files": [
+    "extensions/**/*.ts",
+    "skills/**/*",
+    "README.md"
+  ],
+  "peerDependencies": {
+    "@mariozechner/pi-coding-agent": "*",
+    "@mariozechner/pi-ai": "*",
+    "@mariozechner/pi-tui": "*",
+    "@sinclair/typebox": "*"
+  }
+}

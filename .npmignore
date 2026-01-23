@@ -1,0 +1,11 @@
+# Git
+.git
+.gitignore
+
+# Development
+.vscode
+.idea
+*.log
+
+# Project config (not needed in npm package)
+AGENTS.md
