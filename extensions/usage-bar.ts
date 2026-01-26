@@ -1034,7 +1034,7 @@ class UsageComponent {
 					for (const w of u.windows) {
 						const remaining = Math.max(0, 100 - w.usedPercent);
 						const barW = 12;
-						const filled = Math.round((w.usedPercent / 100) * barW);
+						const filled = Math.min(barW, Math.round((w.usedPercent / 100) * barW));
 						const empty = barW - filled;
 						const color = remaining <= 10 ? "error" : remaining <= 30 ? "warning" : "success";
 						const bar = t.fg(color, "█".repeat(filled)) + dim("░".repeat(empty));
