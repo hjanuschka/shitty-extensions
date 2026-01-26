@@ -2,6 +2,8 @@
 
 Custom extensions and skills for [pi coding agent](https://github.com/badlogic/pi-mono).
 
+**Requires pi 0.50.0+** | [npm](https://www.npmjs.com/package/shitty-extensions) | [GitHub](https://github.com/hjanuschka/shitty-extensions)
+
 ## Table of Contents
 
 - [Installation](#installation)
@@ -26,71 +28,36 @@ Custom extensions and skills for [pi coding agent](https://github.com/badlogic/p
 
 ## Installation
 
-### Via npm (recommended)
+### Via pi install (recommended)
 
-Install globally to make all extensions available to pi:
-
-```bash
-npm install -g shitty-extensions
-```
-
-Then add to your `~/.pi/agent/settings.json`:
-
-```json
-{
-  "extensions": ["shitty-extensions"]
-}
-```
-
-Or reference individual extensions:
-
-```json
-{
-  "extensions": [
-    "shitty-extensions/extensions/oracle.ts",
-    "shitty-extensions/extensions/usage-bar.ts"
-  ]
-}
-```
-
-### Via CLI flag
-
-Load extensions for a single session:
+Install from npm:
 
 ```bash
-pi -e shitty-extensions
+pi install npm:shitty-extensions
 ```
 
-Or load specific extensions:
+Or install from git:
 
 ```bash
-pi -e shitty-extensions/extensions/oracle.ts
+pi install git:github.com/hjanuschka/shitty-extensions
 ```
 
-### Skills Installation
+That's it! Pi automatically discovers all extensions and skills from the package.
 
-Skills are discovered from specific directories. After installing the npm package, symlink the skills:
+### Try without installing
+
+Load for a single session without permanent installation:
 
 ```bash
-# Find where npm installed the package
-SHITTY_EXT=$(npm root -g)/shitty-extensions
-
-# Symlink skills for pi
-ln -s $SHITTY_EXT/skills/a-nach-b ~/.pi/agent/skills/
-
-# Optional: Also for Claude Code and Codex CLI
-ln -s $SHITTY_EXT/skills/a-nach-b ~/.claude/skills/
-ln -s $SHITTY_EXT/skills/a-nach-b ~/.codex/skills/
+pi -e npm:shitty-extensions
 ```
 
-Or add the package's skills directory to your settings.json:
+### Project-local installation
 
-```json
-{
-  "skills": {
-    "customDirectories": ["<path-to-global-node-modules>/shitty-extensions/skills"]
-  }
-}
+Install to `.pi/` for team sharing (auto-installs for teammates on startup):
+
+```bash
+pi install -l npm:shitty-extensions
 ```
 
 ### Manual installation
@@ -99,13 +66,6 @@ Clone the repo and reference directly:
 
 ```bash
 git clone https://github.com/hjanuschka/shitty-extensions.git ~/shitty-extensions
-
-# In settings.json
-{
-  "extensions": ["~/shitty-extensions"]
-}
-
-# Or via CLI
 pi -e ~/shitty-extensions
 ```
 
@@ -464,10 +424,12 @@ See [skills/a-nach-b/SKILL.md](skills/a-nach-b/SKILL.md) for full API documentat
 
 ## Directory Structure
 
+This package follows the [pi package conventions](https://github.com/badlogic/pi-mono/blob/main/packages/coding-agent/docs/packages.md):
+
 ```
 shitty-extensions/
-├── package.json         # npm package config with pi extensions field
-├── extensions/          # Pi agent extensions (.ts files)
+├── package.json         # Declares extensions in "pi" field + "pi-package" keyword
+├── extensions/          # Auto-discovered extensions (.ts files)
 │   ├── oracle.ts
 │   ├── memory-mode.ts
 │   ├── plan-mode.ts
@@ -480,7 +442,7 @@ shitty-extensions/
 │   ├── speedreading.ts
 │   ├── loop.ts
 │   └── flicker-corp.ts
-├── skills/              # Agent skills (symlink after install)
+├── skills/              # Auto-discovered skills (SKILL.md folders)
 │   └── a-nach-b/
 │       ├── SKILL.md     # Skill definition & API docs
 │       ├── search.sh
