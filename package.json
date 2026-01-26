@@ -1,6 +1,6 @@
 {
   "name": "shitty-extensions",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Custom extensions and skills for pi coding agent",
   "type": "module",
   "keywords": [
