@@ -1038,7 +1038,7 @@ class UsageComponent {
 						const empty = barW - filled;
 						const color = remaining <= 10 ? "error" : remaining <= 30 ? "warning" : "success";
 						const bar = t.fg(color, "█".repeat(filled)) + dim("░".repeat(empty));
-						const reset = w.resetDescription ? dim(` ⏱${w.resetDescription}`) : "";
+						const reset = w.resetDescription ? dim(` ⏱ ${w.resetDescription}`) : "";
 						lines.push(box(`  ${w.label.padEnd(7)} ${bar} ${remaining.toFixed(0).padStart(3)}%${reset}`));
 					}
 				}
