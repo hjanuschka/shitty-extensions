@@ -38,8 +38,10 @@
       "./extensions/memory-mode.ts",
       "./extensions/oracle.ts",
       "./extensions/plan-mode.ts",
+      "./extensions/resistance.ts",
       "./extensions/speedreading.ts",
       "./extensions/status-widget.ts",
+      "./extensions/teletext.ts",
       "./extensions/ultrathink.ts",
       "./extensions/usage-bar.ts"
     ]
