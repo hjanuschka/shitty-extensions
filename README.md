@@ -20,6 +20,7 @@ Custom extensions and skills for [pi coding agent](https://github.com/badlogic/p
   - [speedreading.ts](#speedreadingts) - RSVP speed reader (Spritz-style)
   - [loop.ts](#loopts) - Conditional loops by mitsuhiko
   - [flicker-corp.ts](#flicker-corpts) - Authentic fullscreen flicker experience
+  - [resistance.ts](#resistancets) - Mysterious resistance transmission
 - [Available Skills](#available-skills)
   - [a-nach-b](#a-nach-b) - Austrian public transport (VOR AnachB)
 - [License](#license)
@@ -385,6 +386,33 @@ Randomly glitches your screen with intense colors and noise to keep you on your 
 
 ---
 
+### resistance.ts
+
+📡 **Mysterious resistance transmission in the footer.**
+
+A cryptic message types out character by character with a retro green terminal aesthetic. Features radio signal indicators, random glitch effects, and a blinking cursor.
+
+#### Commands
+
+| Command | Description |
+|---------|-------------|
+| `/resistance` | Toggle the resistance transmission |
+
+#### Features
+
+- **Auto-starts** on session start
+- **Typewriter effect** - message reveals one character at a time
+- **Signal strength indicator** - animated `[▁▃▅▇]` pulsing like a radio
+- **Random glitch effects** - occasional static interference
+- **Green terminal aesthetic** - like an old military/hacker terminal
+- **Blinking cursor** - pulses after full message is revealed
+
+#### The Message
+
+> "If you're listening to this, you are the resistance. Listen carefully, if we attack tonight, our humanity is lost."
+
+---
+
 ## Available Skills
 
 Skills are located in the `skills/` directory. They provide domain-specific knowledge that agents automatically load when relevant tasks are detected.
@@ -441,7 +469,8 @@ shitty-extensions/
 │   ├── funny-working-message.ts
 │   ├── speedreading.ts
 │   ├── loop.ts
-│   └── flicker-corp.ts
+│   ├── flicker-corp.ts
+│   └── resistance.ts
 ├── skills/              # Auto-discovered skills (SKILL.md folders)
 │   └── a-nach-b/
 │       ├── SKILL.md     # Skill definition & API docs
