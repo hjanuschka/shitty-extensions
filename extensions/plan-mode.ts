@@ -1148,7 +1148,7 @@ Execute each step in order. Use the plan tool with action "complete-step" and st
 			"Plan ids are shown as PLAN-<hex>; id parameters accept PLAN-<hex> or raw hex.",
 		parameters: PlanParams,
 
-		async execute(_toolCallId, params, _onUpdate, ctx) {
+		async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
 			const plansDir = getPlansDir(ctx.cwd);
 			const action: PlanAction = params.action;
 
