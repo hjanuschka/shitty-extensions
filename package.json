@@ -1,6 +1,6 @@
 {
   "name": "shitty-extensions",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "Custom extensions and skills for pi coding agent",
   "type": "module",
   "keywords": [
@@ -30,6 +30,7 @@
   ],
   "pi": {
     "extensions": [
+      "./extensions/clipboard.ts",
       "./extensions/cost-tracker.ts",
       "./extensions/flicker-corp.ts",
       "./extensions/funny-working-message.ts",
@@ -41,7 +42,6 @@
       "./extensions/resistance.ts",
       "./extensions/speedreading.ts",
       "./extensions/status-widget.ts",
-      "./extensions/teletext.ts",
       "./extensions/ultrathink.ts",
       "./extensions/usage-bar.ts"
     ]
