@@ -8,6 +8,7 @@ Custom extensions and skills for [pi coding agent](https://github.com/badlogic/p
 
 - [Installation](#installation)
 - [Available Extensions](#available-extensions)
+  - [clipboard.ts](#clipboardts) - Copy text to system clipboard
   - [oracle.ts](#oraclets) - Get second opinions from other AI models
   - [memory-mode.ts](#memory-modets) - Save instructions to AGENTS.md
   - [plan-mode.ts](#plan-modets) - Read-only exploration mode
@@ -75,6 +76,31 @@ pi -e ~/shitty-extensions
 ## Available Extensions
 
 Extensions are located in the `extensions/` directory.
+
+### clipboard.ts
+
+📋 Copy text to the system clipboard via OSC52 escape sequences.
+
+#### Tool
+
+| Tool | Description |
+|------|-------------|
+| `copy_to_clipboard` | Copy text to clipboard (available to the LLM) |
+
+#### Features
+
+- **OSC52 support**: Works across SSH sessions and most modern terminal emulators
+- **LLM-accessible**: The AI can copy generated content directly to your clipboard
+- **Wide compatibility**: iTerm2, Kitty, Alacritty, WezTerm, foot, Windows Terminal, tmux
+
+#### Example Usage
+
+Just ask:
+- "Write me a draft reply and put it in my clipboard"
+- "Generate a UUID and copy it to clipboard"
+- "Put that code snippet in my clipboard"
+
+---
 
 ### oracle.ts
 
@@ -458,19 +484,20 @@ This package follows the [pi package conventions](https://github.com/badlogic/pi
 shitty-extensions/
 ├── package.json         # Declares extensions in "pi" field + "pi-package" keyword
 ├── extensions/          # Auto-discovered extensions (.ts files)
-│   ├── oracle.ts
-│   ├── memory-mode.ts
-│   ├── plan-mode.ts
-│   ├── handoff.ts
-│   ├── usage-bar.ts
-│   ├── ultrathink.ts
-│   ├── status-widget.ts
+│   ├── clipboard.ts
 │   ├── cost-tracker.ts
-│   ├── funny-working-message.ts
-│   ├── speedreading.ts
-│   ├── loop.ts
 │   ├── flicker-corp.ts
-│   └── resistance.ts
+│   ├── funny-working-message.ts
+│   ├── handoff.ts
+│   ├── loop.ts
+│   ├── memory-mode.ts
+│   ├── oracle.ts
+│   ├── plan-mode.ts
+│   ├── resistance.ts
+│   ├── speedreading.ts
+│   ├── status-widget.ts
+│   ├── ultrathink.ts
+│   └── usage-bar.ts
 ├── skills/              # Auto-discovered skills (SKILL.md folders)
 │   └── a-nach-b/
 │       ├── SKILL.md     # Skill definition & API docs
