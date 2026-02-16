@@ -8,6 +8,7 @@ Custom extensions and skills for [pi coding agent](https://github.com/badlogic/p
 
 - [Installation](#installation)
 - [Available Extensions](#available-extensions)
+  - [branch-sessions.ts](#branch-sessionsts) - Git branch-based session directories
   - [clipboard.ts](#clipboardts) - Copy text to system clipboard
   - [oracle.ts](#oraclets) - Get second opinions from other AI models
   - [memory-mode.ts](#memory-modets) - Save instructions to AGENTS.md
@@ -76,6 +77,54 @@ pi -e ~/shitty-extensions
 ## Available Extensions
 
 Extensions are located in the `extensions/` directory.
+
+### branch-sessions.ts
+
+🌿 Organize pi sessions by git branch for seamless context switching.
+
+#### What it does
+
+Automatically stores sessions in branch-specific directories so each git branch gets its own conversation history. No more wrong context when you `--continue` after switching branches.
+
+#### Session Structure
+
+```
+~/.pi/agent/sessions/
+└── --Users-hjanuschka-myproject--/
+    ├── --main--/
+    │   └── 2026-02-16T...jsonl
+    ├── --feature-auth--/
+    │   └── 2026-02-16T...jsonl
+    └── --bugfix-login--/
+        └── 2026-02-16T...jsonl
+```
+
+#### Features
+
+- **Automatic branch detection**: Uses `git rev-parse --abbrev-ref HEAD`
+- **Safe path encoding**: Branch names sanitized for filesystem (slashes → dashes)
+- **CLI override**: `--session-dir` flag takes precedence
+- **Graceful fallback**: Works normally in non-git directories
+
+#### Important
+
+⚠️ **Don't switch git branches mid-session!** This will confuse the session context. Always start a new pi session after switching branches:
+
+```bash
+git checkout feature-branch
+pi  # Start fresh session for this branch
+```
+
+#### Why this is an extension
+
+Branch-based sessions introduce foot-gun potential (switching branches mid-session breaks context). Better to let users opt-in via extension than bake this complexity into pi core.
+
+#### Requirements
+
+- **pi 0.52.13+** (requires `session_directory` extension event)
+- Git repository
+
+---
 
 ### clipboard.ts
 
@@ -484,6 +533,7 @@ This package follows the [pi package conventions](https://github.com/badlogic/pi
 shitty-extensions/
 ├── package.json         # Declares extensions in "pi" field + "pi-package" keyword
 ├── extensions/          # Auto-discovered extensions (.ts files)
+│   ├── branch-sessions.ts
 │   ├── clipboard.ts
 │   ├── cost-tracker.ts
 │   ├── flicker-corp.ts
