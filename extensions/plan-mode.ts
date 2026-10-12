@@ -52,7 +52,7 @@ import {
 	Text,
 	TUI,
 	fuzzyMatch,
-	getEditorKeybindings,
+	getKeybindings,
 	matchesKey,
 	truncateToWidth,
 	visibleWidth,
@@ -765,25 +765,25 @@ class PlanSelectorComponent extends Container implements Focusable {
 	}
 
 	handleInput(keyData: string): void {
-		const kb = getEditorKeybindings();
-		if (kb.matches(keyData, "selectUp")) {
+		const kb = getKeybindings();
+		if (kb.matches(keyData, "tui.select.up")) {
 			if (this.filteredPlans.length === 0) return;
 			this.selectedIndex = this.selectedIndex === 0 ? this.filteredPlans.length - 1 : this.selectedIndex - 1;
 			this.updateList();
 			return;
 		}
-		if (kb.matches(keyData, "selectDown")) {
+		if (kb.matches(keyData, "tui.select.down")) {
 			if (this.filteredPlans.length === 0) return;
 			this.selectedIndex = this.selectedIndex === this.filteredPlans.length - 1 ? 0 : this.selectedIndex + 1;
 			this.updateList();
 			return;
 		}
-		if (kb.matches(keyData, "selectConfirm")) {
+		if (kb.matches(keyData, "tui.select.confirm")) {
 			const selected = this.filteredPlans[this.selectedIndex];
 			if (selected) this.onSelectCallback(selected);
 			return;
 		}
-		if (kb.matches(keyData, "selectCancel")) {
+		if (kb.matches(keyData, "tui.select.cancel")) {
 			this.onCancelCallback();
 			return;
 		}
@@ -886,13 +886,13 @@ class PlanDetailOverlayComponent {
 	}
 
 	handleInput(keyData: string): void {
-		const kb = getEditorKeybindings();
-		if (kb.matches(keyData, "selectCancel")) { this.onAction("back"); return; }
-		if (kb.matches(keyData, "selectConfirm")) { this.onAction("execute"); return; }
-		if (kb.matches(keyData, "selectUp")) { this.scrollBy(-1); return; }
-		if (kb.matches(keyData, "selectDown")) { this.scrollBy(1); return; }
-		if (kb.matches(keyData, "selectPageUp")) { this.scrollBy(-this.viewHeight || -1); return; }
-		if (kb.matches(keyData, "selectPageDown")) { this.scrollBy(this.viewHeight || 1); return; }
+		const kb = getKeybindings();
+		if (kb.matches(keyData, "tui.select.cancel")) { this.onAction("back"); return; }
+		if (kb.matches(keyData, "tui.select.confirm")) { this.onAction("execute"); return; }
+		if (kb.matches(keyData, "tui.select.up")) { this.scrollBy(-1); return; }
+		if (kb.matches(keyData, "tui.select.down")) { this.scrollBy(1); return; }
+		if (kb.matches(keyData, "tui.select.pageUp")) { this.scrollBy(-this.viewHeight || -1); return; }
+		if (kb.matches(keyData, "tui.select.pageDown")) { this.scrollBy(this.viewHeight || 1); return; }
 	}
 
 	render(width: number): string[] {
