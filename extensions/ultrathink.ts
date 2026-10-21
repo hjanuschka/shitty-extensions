@@ -19,6 +19,11 @@ const RAINBOW_COLORS = [
   "\x1b[38;5;213m", // pink
 ];
 
+// Each widget update repaints the TUI, which walks the whole transcript, so the
+// animation and the editor poll both stay well above the 16ms render interval.
+const ANIMATION_INTERVAL_MS = 120;
+const EDITOR_POLL_INTERVAL_MS = 250;
+
 const RESET = "\x1b[0m";
 const BOLD = "\x1b[1m";
 const DIM = "\x1b[2m";
@@ -92,7 +97,7 @@ export default function (pi: ExtensionAPI) {
       }
       
       ctx.ui.setWidget("ultrathink", createWidget());
-    }, 50);
+    }, ANIMATION_INTERVAL_MS);
   }
 
   // Stop rainbow animation
@@ -113,10 +118,14 @@ export default function (pi: ExtensionAPI) {
     
     currentCtx = ctx;
     
-    // Poll editor text frequently to detect typing
+    let lastText: string | undefined;
+
+    // There is no editor-change event, so detection requires polling.
     editorWatchInterval = setInterval(() => {
       try {
         const text = ctx.ui.getEditorText?.() || "";
+        if (text === lastText) return;
+        lastText = text;
         const hasUltrathink = text.toLowerCase().includes("ultrathink");
         
         if (hasUltrathink && !isShowingRainbow) {
@@ -129,7 +138,7 @@ export default function (pi: ExtensionAPI) {
       } catch {
         // Ignore errors if UI not available
       }
-    }, 50); // Check every 50ms for responsive detection
+    }, EDITOR_POLL_INTERVAL_MS);
   }
 
   // Stop watching editor

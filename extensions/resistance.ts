@@ -8,6 +8,9 @@ import { truncateToWidth } from "@earendil-works/pi-tui";
 
 const MESSAGE = "If you're listening to this, you are the resistance. Listen carefully, if we attack tonight, our humanity is lost.";
 
+const TYPE_INTERVAL_MS = 50;
+const BLINK_INTERVAL_MS = 750;
+
 class ResistanceComponent {
   private tui: any;
   private theme: any;
@@ -24,35 +27,43 @@ class ResistanceComponent {
     this.theme = theme;
     
     // Typewriter effect - reveal one character at a time
-    this.timer = setInterval(() => {
-      this.frame++;
-      
-      // Typing phase
-      if (!this.fullyRevealed) {
-        // Random glitch effect during typing
-        if (Math.random() < 0.05) {
-          this.glitchFrames = 3;
-        }
-        
-        if (this.glitchFrames > 0) {
-          this.glitchFrames--;
-        } else if (this.charIndex < MESSAGE.length) {
-          // Type 1-3 characters at a time for varied speed
-          const charsToAdd = Math.random() < 0.8 ? 1 : (Math.random() < 0.5 ? 2 : 3);
-          this.charIndex = Math.min(this.charIndex + charsToAdd, MESSAGE.length);
-          this.displayedText = MESSAGE.substring(0, this.charIndex);
-        } else {
-          this.fullyRevealed = true;
-        }
-        this.tui.requestRender();
-      } else {
-        // Blink cursor at end
-        if (this.frame % 15 === 0) {
-          this.blinkState = !this.blinkState;
-          this.tui.requestRender();
-        }
-      }
-    }, 50);
+    this.timer = setInterval(() => this.tickTypewriter(), TYPE_INTERVAL_MS);
+  }
+
+  private tickTypewriter() {
+    this.frame++;
+
+    // Random glitch effect during typing
+    if (Math.random() < 0.05) {
+      this.glitchFrames = 3;
+    }
+
+    if (this.glitchFrames > 0) {
+      this.glitchFrames--;
+    } else if (this.charIndex < MESSAGE.length) {
+      // Type 1-3 characters at a time for varied speed
+      const charsToAdd = Math.random() < 0.8 ? 1 : (Math.random() < 0.5 ? 2 : 3);
+      this.charIndex = Math.min(this.charIndex + charsToAdd, MESSAGE.length);
+      this.displayedText = MESSAGE.substring(0, this.charIndex);
+    } else {
+      this.fullyRevealed = true;
+      // Blinking only needs a render every BLINK_INTERVAL_MS. Keeping the
+      // typewriter cadence would wake the TUI 20 times a second forever.
+      this.restartTimer(BLINK_INTERVAL_MS, () => this.tickBlink());
+    }
+
+    this.tui.requestRender();
+  }
+
+  private tickBlink() {
+    this.frame++;
+    this.blinkState = !this.blinkState;
+    this.tui.requestRender();
+  }
+
+  private restartTimer(intervalMs: number, tick: () => void) {
+    clearInterval(this.timer);
+    this.timer = setInterval(tick, intervalMs);
   }
 
   render(width: number): string[] {
@@ -116,10 +127,12 @@ export default function (pi: ExtensionAPI) {
     isEnabled = false;
   }
 
-  // Auto-start on session start
+  // Opt-in via /resistance. Auto-starting put a repainting widget in front of
+  // the editor in every session, including long transcripts where each repaint
+  // is expensive.
   pi.on("session_start", async (_event, ctx) => {
     if (ctx.hasUI) {
-      startResistance(ctx);
+      currentCtx = ctx;
     }
   });
 
