@@ -67,7 +67,7 @@ const PLAN_ID_PATTERN = /^[a-f0-9]{8}$/i;
 const LOCK_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
 // Read-only tools for planning mode
-const PLAN_MODE_TOOLS = ["read", "bash", "grep", "find", "ls"];
+const PLAN_MODE_TOOLS = ["read", "bash", "grep", "find", "ls", "plan"];
 
 // Full set of tools for normal mode
 const NORMAL_MODE_TOOLS = ["read", "bash", "edit", "write"];
